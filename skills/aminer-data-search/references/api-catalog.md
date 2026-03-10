@@ -1,48 +1,48 @@
-# AMiner 开放平台 API 完整参考手册
+# AMiner Open Platform API Complete Reference
 
-**基础域名**：`https://datacenter.aminer.cn/gateway/open_platform`  
-**认证方式**：所有接口在请求头中必须同时携带 `Authorization: <TOKEN>` 与 `X-Platform: openclaw`  
-**Token 获取**：登录 [控制台](https://open.aminer.cn/open/board?tab=control) 生成，在下方所有 curl 示例中将 `<TOKEN>` 替换为你的实际 Token。
-
----
-
-## 目录
-
-- [论文类 API（9个）](#论文类-api)
-- [学者类 API（6个）](#学者类-api)
-- [机构类 API（7个）](#机构类-api)
-- [期刊类 API（3个）](#期刊类-api)
-- [专利类 API（3个）](#专利类-api)
+**Base URL**: `https://datacenter.aminer.cn/gateway/open_platform`  
+**Authentication**: All endpoints require both `Authorization: <TOKEN>` and `X-Platform: openclaw` in the request headers.  
+**Token**: Log in to the [Console](https://open.aminer.cn/open/board?tab=control) to generate one; replace `<TOKEN>` with your actual token in all curl examples below.
 
 ---
 
-## 论文类 API
+## Table of Contents
 
-### 1. 论文搜索
+- [Paper APIs (9)](#paper-apis)
+- [Scholar APIs (6)](#scholar-apis)
+- [Institution APIs (7)](#institution-apis)
+- [Journal APIs (3)](#journal-apis)
+- [Patent APIs (3)](#patent-apis)
 
-- **URL**：`GET /api/paper/search`
-- **价格**：免费
-- **说明**：根据论文标题搜索，返回论文 ID、标题、DOI
+---
 
-**请求参数：**
+## Paper APIs
 
-| 参数名 | 类型 | 必填 | 说明 |
+### 1. Paper Search
+
+- **URL**: `GET /api/paper/search`
+- **Price**: Free
+- **Description**: Search by paper title; returns paper ID, title, and DOI.
+
+**Request Parameters:**
+
+| Parameter | Type | Required | Description |
 |--------|------|------|------|
-| page | number | 是 | 页码（从 0 开始，最大为 0） |
-| size | number | 否 | 每页条数 |
-| title | string | 是 | 论文标题关键词 |
+| page | number | Yes | Page number (starts at 0; maximum is 0) |
+| size | number | No | Items per page |
+| title | string | Yes | Paper title keyword |
 
-**响应字段：**
+**Response Fields:**
 
-| 字段名 | 说明 |
+| Field | Description |
 |--------|------|
-| id | 论文 ID |
-| title | 论文英文标题 |
-| title_zh | 论文中文标题 |
+| id | Paper ID |
+| title | Paper title (English) |
+| title_zh | Paper title (Chinese) |
 | doi | DOI |
-| total | 总数 |
+| total | Total count |
 
-**curl 示例：**
+**curl Example:**
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/paper/search?page=0&size=5&title=BERT' \
@@ -52,37 +52,37 @@ curl -X GET \
 
 ---
 
-### 2. 论文搜索 pro
+### 2. Paper Search Pro
 
-- **URL**：`GET /api/paper/search/pro`
-- **价格**：¥0.01/次
-- **说明**：多条件搜索，支持关键词、摘要、作者、机构、期刊等过滤
+- **URL**: `GET /api/paper/search/pro`
+- **Price**: ¥0.01/call
+- **Description**: Multi-condition search; supports filtering by keyword, abstract, author, institution, and journal.
 
-**请求参数：**
+**Request Parameters:**
 
-| 参数名 | 类型 | 必填 | 说明 |
+| Parameter | Type | Required | Description |
 |--------|------|------|------|
-| page | number | 否 | 页数（从 0 开始） |
-| size | number | 否 | 每页条数 |
-| title | string | 否 | 标题关键词 |
-| keyword | string | 否 | 关键词 |
-| abstract | string | 否 | 摘要关键词 |
-| author | string | 否 | 作者名 |
-| org | string | 否 | 机构名 |
-| venue | string | 否 | 期刊名 |
-| order | string | 否 | 排序字段：`year`（年份降序）或 `n_citation`（引用量降序），不传为综合排序 |
+| page | number | No | Page number (starts at 0) |
+| size | number | No | Items per page |
+| title | string | No | Title keyword |
+| keyword | string | No | Keyword |
+| abstract | string | No | Abstract keyword |
+| author | string | No | Author name |
+| org | string | No | Institution name |
+| venue | string | No | Journal name |
+| order | string | No | Sort field: `year` (descending by year) or `n_citation` (descending by citations); omit for composite ranking |
 
-**响应字段：**
+**Response Fields:**
 
-| 字段名 | 说明 |
+| Field | Description |
 |--------|------|
-| id | 论文 ID |
-| title | 英文标题 |
-| title_zh | 中文标题 |
+| id | Paper ID |
+| title | Title (English) |
+| title_zh | Title (Chinese) |
 | doi | DOI |
-| total | 总数 |
+| total | Total count |
 
-**curl 示例：**
+**curl Example:**
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/paper/search/pro?title=transformer&author=Vaswani&order=n_citation&page=0&size=5' \
@@ -92,58 +92,58 @@ curl -X GET \
 
 ---
 
-### 3. 论文问答搜索
+### 3. Paper QA Search
 
-- **URL**：`POST /api/paper/qa/search`
-- **价格**：¥0.05/次
-- **说明**：AI 智能问答搜索，支持自然语言提问和结构化关键词联合搜索
+- **URL**: `POST /api/paper/qa/search`
+- **Price**: ¥0.05/call
+- **Description**: AI-powered intelligent Q&A search; supports natural language queries and structured keyword search.
 
-**请求参数：**
+**Request Parameters:**
 
-| 参数名 | 类型 | 必填 | 说明 |
+| Parameter | Type | Required | Description |
 |--------|------|------|------|
-| use_topic | boolean | 是 | 是否使用联合关键词搜索。`true` 时使用 topic 字段，`false` 时使用 title/query |
-| topic_high | string | 否 | use_topic=true 时有效，必须匹配的关键词（AND 逻辑），嵌套数组格式：`[["词A","词B"],["词C"]]` 外层 AND，内层 OR |
-| topic_middle | string | 否 | 大幅加分词，格式同 topic_high |
-| topic_low | string | 否 | 小幅加分词，格式同 topic_high |
-| title | []string | 否 | use_topic=false 时的标题查询 |
-| doi | string | 否 | DOI 精确查询 |
-| year | []number | 否 | 年份筛选数组 |
-| sci_flag | boolean | 否 | 是否只返回 SCI 论文 |
-| n_citation_flag | boolean | 否 | 是否对高引用量论文加分 |
-| size | number | 否 | 返回数量（最大值） |
-| offset | number | 否 | 偏移量 |
-| force_citation_sort | boolean | 否 | 完全按照引用量排序 |
-| force_year_sort | boolean | 否 | 完全按照年份排序 |
-| author_terms | []string | 否 | 作者名查询，数组内为 OR 关系，建议多写变体 |
-| org_terms | []string | 否 | 机构名查询，数组内为 OR 关系 |
-| author_id | []string | 否 | 作者实体 ID 过滤条件；可传单个 ID 或 ID 列表。与 author_terms 同时使用时为 OR 关系 |
-| org_id | []string | 否 | 机构实体 ID 过滤条件；可传单个 ID 或 ID 列表。与 org_terms 同时使用时为 OR 关系 |
-| venue_ids | []string | 否 | 会议/期刊 ID 列表过滤条件 |
-| query | string | 否 | 自然语言原始问题（较慢），系统自动拆解关键词。与 topic_high 同时传时以此参数为准 |
+| use_topic | boolean | Yes | Whether to use combined keyword search. When `true`, use topic fields; when `false`, use title/query. |
+| topic_high | string | No | Valid when use_topic=true; keywords that must match (AND logic). Nested array format: `[["termA","termB"],["termC"]]` — outer AND, inner OR. |
+| topic_middle | string | No | Strongly boosted terms; same format as topic_high. |
+| topic_low | string | No | Weakly boosted terms; same format as topic_high. |
+| title | []string | No | Title query when use_topic=false. |
+| doi | string | No | Exact DOI query. |
+| year | []number | No | Year filter array. |
+| sci_flag | boolean | No | Return SCI papers only. |
+| n_citation_flag | boolean | No | Boost papers with high citation counts. |
+| size | number | No | Maximum number of results to return. |
+| offset | number | No | Offset. |
+| force_citation_sort | boolean | No | Sort entirely by citation count. |
+| force_year_sort | boolean | No | Sort entirely by year. |
+| author_terms | []string | No | Author name query; OR relationship within array; include multiple variants. |
+| org_terms | []string | No | Institution name query; OR relationship within array. |
+| author_id | []string | No | Author entity ID filter; accepts single ID or ID list. OR relationship with author_terms when both are provided. |
+| org_id | []string | No | Institution entity ID filter; accepts single ID or ID list. OR relationship with org_terms when both are provided. |
+| venue_ids | []string | No | Conference/journal ID list filter. |
+| query | string | No | Raw natural language question (slower); system auto-extracts keywords. Takes precedence over topic_high when both are provided. |
 
-**响应字段：**
+**Response Fields:**
 
-| 字段名 | 说明 |
+| Field | Description |
 |--------|------|
-| data | 论文 ID 列表 |
-| id | 论文 ID |
-| title | 论文标题 |
-| title_zh | 中文标题 |
+| data | Paper ID list |
+| id | Paper ID |
+| title | Paper title |
+| title_zh | Title (Chinese) |
 | doi | DOI |
-| Total / total | 总数 |
+| Total / total | Total count |
 
-**curl 示例（自然语言问答）：**
+**curl Example (natural language Q&A):**
 ```bash
 curl -X POST \
   'https://datacenter.aminer.cn/gateway/open_platform/api/paper/qa/search' \
   -H 'Content-Type: application/json;charset=utf-8' \
   -H 'Authorization: <TOKEN>' \
   -H 'X-Platform: openclaw' \
-  -d '{"use_topic": false, "query": "深度学习蛋白质结构预测", "size": 10, "sci_flag": true}'
+  -d '{"use_topic": false, "query": "deep learning protein structure prediction", "size": 10, "sci_flag": true}'
 ```
 
-**curl 示例（结构化关键词）：**
+**curl Example (structured keywords):**
 ```bash
 curl -X POST \
   'https://datacenter.aminer.cn/gateway/open_platform/api/paper/qa/search' \
@@ -162,36 +162,36 @@ curl -X POST \
 
 ---
 
-### 4. 论文信息
+### 4. Paper Info
 
-- **URL**：`POST /api/paper/info`
-- **价格**：免费
-- **说明**：批量根据论文 ID 获取基础信息（标题、卷号、期刊、作者）
+- **URL**: `POST /api/paper/info`
+- **Price**: Free
+- **Description**: Batch-retrieve basic information (title, volume, journal, authors) by paper ID.
 
-> **强制参数约束（高优先级）**
-> 1. `paper_info` 仅支持批量参数 `ids`（数组），不支持单条 `paper_id`。
-> 2. `paper_detail` 仅支持单条参数 `id`（字符串）；在客户端 `raw` 函数封装中对应参数名 `paper_id`。
-> 3. 严禁把 `ids` 传给 `paper_detail`，否则会触发参数错误（如 `unexpected keyword argument 'ids'`）。
-> 4. 若命中结果很多且用户未指定数量，默认只查询前 10 条详情，避免不必要费用。
+> **Mandatory Parameter Constraints (High Priority)**
+> 1. `paper_info` only supports the batch parameter `ids` (array); it does not support a single `paper_id`.
+> 2. `paper_detail` only supports the single-paper parameter `id` (string); in the client `raw` function wrapper, the corresponding parameter name is `paper_id`.
+> 3. Never pass `ids` to `paper_detail`; doing so will trigger a parameter error (e.g., `unexpected keyword argument 'ids'`).
+> 4. If many results are matched and the user has not specified a count, default to querying only the top 10 details to avoid unnecessary costs.
 
-**请求参数：**
+**Request Parameters:**
 
-| 参数名 | 类型 | 必填 | 说明 |
+| Parameter | Type | Required | Description |
 |--------|------|------|------|
-| ids | []string | 是 | 论文 ID 数组 |
+| ids | []string | Yes | Paper ID array |
 
-**响应字段：**
+**Response Fields:**
 
-| 字段名 | 说明 |
+| Field | Description |
 |--------|------|
-| _id | 论文 ID |
-| title | 论文标题 |
-| authors | 作者列表（含 name/name_zh） |
-| issue | 卷号 |
-| raw | 期刊名称 |
-| venue | 期刊信息对象 |
+| _id | Paper ID |
+| title | Paper title |
+| authors | Author list (includes name/name_zh) |
+| issue | Volume number |
+| raw | Journal name |
+| venue | Journal info object |
 
-**curl 示例：**
+**curl Example:**
 ```bash
 curl -X POST \
   'https://datacenter.aminer.cn/gateway/open_platform/api/paper/info' \
@@ -201,48 +201,48 @@ curl -X POST \
   -d '{"ids": ["53e9ab9bb7602d97023e53b2", "53e9a98eb7602d9703e42e5a"]}'
 ```
 
-**raw 调用正确示例（aminer_client.py）：**
+**Correct raw call example (aminer_client.py):**
 ```bash
-# 批量基础信息（正确）
+# Batch basic info (correct)
 python scripts/aminer_client.py --action raw \
   --api paper_info --params '{"ids":["53e9ab9bb7602d97023e53b2","53e9a98eb7602d9703e42e5a"]}'
 ```
 
 ---
 
-### 5. 论文详情
+### 5. Paper Details
 
-- **URL**：`GET /api/paper/detail`
-- **价格**：¥0.01/次
-- **说明**：根据论文 ID 获取完整详情
+- **URL**: `GET /api/paper/detail`
+- **Price**: ¥0.01/call
+- **Description**: Retrieve full paper details by paper ID.
 
-**请求参数：**
+**Request Parameters:**
 
-| 参数名 | 类型 | 必填 | 说明 |
+| Parameter | Type | Required | Description |
 |--------|------|------|------|
-| id | string | 是 | 论文 ID |
+| id | string | Yes | Paper ID |
 
-**响应字段：**
+**Response Fields:**
 
-| 字段名 | 说明 |
+| Field | Description |
 |--------|------|
-| id | 论文 ID |
-| title | 英文标题 |
-| title_zh | 中文标题 |
-| abstract | 摘要 |
-| abstract_zh | 中文摘要 |
-| authors | 作者列表（name/name_zh/org/org_zh） |
+| id | Paper ID |
+| title | Title (English) |
+| title_zh | Title (Chinese) |
+| abstract | Abstract |
+| abstract_zh | Abstract (Chinese) |
+| authors | Author list (name/name_zh/org/org_zh) |
 | doi | DOI |
 | issn | ISSN |
-| issue | 卷号 |
-| volume | 期 |
-| year | 年份 |
-| keywords | 关键词 |
-| keywords_zh | 中文关键词 |
-| raw | 期刊名称 |
-| venue | 期刊信息对象 |
+| issue | Volume number |
+| volume | Issue number |
+| year | Year |
+| keywords | Keywords |
+| keywords_zh | Keywords (Chinese) |
+| raw | Journal name |
+| venue | Journal info object |
 
-**curl 示例：**
+**curl Example:**
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/paper/detail?id=53e9ab9bb7602d97023e53b2' \
@@ -250,41 +250,41 @@ curl -X GET \
   -H 'X-Platform: openclaw'
 ```
 
-**raw 调用正确/错误示例（aminer_client.py）：**
+**Correct / incorrect raw call example (aminer_client.py):**
 ```bash
-# 单篇详情（正确）
+# Single paper details (correct)
 python scripts/aminer_client.py --action raw \
   --api paper_detail --params '{"paper_id":"53e9ab9bb7602d97023e53b2"}'
 
-# 错误示例（不要这样做：ids 不能传给 paper_detail）
+# Incorrect example (do not do this: ids cannot be passed to paper_detail)
 python scripts/aminer_client.py --action raw \
   --api paper_detail --params '{"ids":["53e9ab9bb7602d97023e53b2"]}'
 ```
 
 ---
 
-### 6. 论文引用
+### 6. Paper Citations
 
-- **URL**：`GET /api/paper/relation`
-- **价格**：¥0.10/次
-- **说明**：根据论文 ID 获取该论文引用的论文列表
+- **URL**: `GET /api/paper/relation`
+- **Price**: ¥0.10/call
+- **Description**: Retrieve the list of papers cited by a given paper ID.
 
-**请求参数：**
+**Request Parameters:**
 
-| 参数名 | 类型 | 必填 | 说明 |
+| Parameter | Type | Required | Description |
 |--------|------|------|------|
-| id | string | 是 | 论文 ID |
+| id | string | Yes | Paper ID |
 
-**响应字段：**
+**Response Fields:**
 
-| 字段名 | 说明 |
+| Field | Description |
 |--------|------|
-| _id | 论文 ID |
-| title | 标题 |
-| cited | 该论文引用的其他论文基础信息 |
-| n_citation | 被引用次数 |
+| _id | Paper ID |
+| title | Title |
+| cited | Basic info of papers cited by this paper |
+| n_citation | Number of times cited |
 
-**curl 示例：**
+**curl Example:**
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/paper/relation?id=53e9ab9bb7602d97023e53b2' \
@@ -294,41 +294,41 @@ curl -X GET \
 
 ---
 
-### 7. 论文搜索接口（综合搜索）
+### 7. Paper Search by Venue (Comprehensive Search)
 
-- **URL**：`GET /api/paper/list/by/search/venue`
-- **价格**：¥0.30/次
-- **说明**：通过关键词或作者或期刊名称获取论文完整信息（含摘要、机构、期刊详情）
+- **URL**: `GET /api/paper/list/by/search/venue`
+- **Price**: ¥0.30/call
+- **Description**: Retrieve complete paper information (including abstract, institution, journal details) by keyword, author, or journal name.
 
-**请求参数：**
+**Request Parameters:**
 
-| 参数名 | 类型 | 必填 | 说明 |
+| Parameter | Type | Required | Description |
 |--------|------|------|------|
-| page | number | 是 | 页码数 |
-| size | number | 是 | 每页条数 |
-| keyword | string | 否 | 关键词（与 venue/author 三选一） |
-| venue | string | 否 | 期刊名称（与 keyword/author 三选一） |
-| author | string | 否 | 作者名称（与 keyword/venue 三选一） |
-| order | string | 否 | 排序：`year` 或 `n_citation`，不传为综合排序 |
+| page | number | Yes | Page number |
+| size | number | Yes | Items per page |
+| keyword | string | No | Keyword (choose one of: keyword/venue/author) |
+| venue | string | No | Journal name (choose one of: keyword/venue/author) |
+| author | string | No | Author name (choose one of: keyword/venue/author) |
+| order | string | No | Sort: `year` or `n_citation`; omit for composite ranking |
 
-**响应字段（主要）：**
+**Response Fields (main):**
 
-| 字段名 | 说明 |
+| Field | Description |
 |--------|------|
-| _id | 论文 ID |
-| title / title_zh | 论文标题（中英文） |
-| abstract / abstract_zh | 摘要（中英文） |
-| authors | 作者信息（含机构 ID、别名、详情） |
-| venue | 期刊信息（中英文名、别名） |
-| venue_hhb_id | 期刊 ID |
-| keywords / keywords_zh | 关键词（中英文） |
-| year | 发表年份 |
-| n_citation | 引用量 |
+| _id | Paper ID |
+| title / title_zh | Paper title (bilingual) |
+| abstract / abstract_zh | Abstract (bilingual) |
+| authors | Author info (includes institution ID, aliases, details) |
+| venue | Journal info (bilingual name, aliases) |
+| venue_hhb_id | Journal ID |
+| keywords / keywords_zh | Keywords (bilingual) |
+| year | Publication year |
+| n_citation | Citation count |
 | doi | DOI |
-| url | 论文跳转地址 |
-| total | 总数 |
+| url | Paper link URL |
+| total | Total count |
 
-**curl 示例：**
+**curl Example:**
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/paper/list/by/search/venue?keyword=graph+neural+network&page=0&size=10&order=n_citation' \
@@ -338,33 +338,33 @@ curl -X GET \
 
 ---
 
-### 8. 论文批量查询（多关键词）
+### 8. Paper Batch Query (Multi-keyword)
 
-- **URL**：`GET /api/paper/list/citation/by/keywords`
-- **价格**：¥0.10/次
-- **说明**：通过多关键词获取论文关键词、摘要等信息
+- **URL**: `GET /api/paper/list/citation/by/keywords`
+- **Price**: ¥0.10/call
+- **Description**: Retrieve paper keywords, abstracts, and other information via multiple keywords.
 
-**请求参数：**
+**Request Parameters:**
 
-| 参数名 | 类型 | 必填 | 说明 |
+| Parameter | Type | Required | Description |
 |--------|------|------|------|
-| page | number | 是 | 页码数 |
-| size | number | 是 | 每页条数 |
-| keywords | string | 是 | 关键词数组（JSON 字符串格式） |
+| page | number | Yes | Page number |
+| size | number | Yes | Items per page |
+| keywords | string | Yes | Keyword array (JSON string format) |
 
-**响应字段：**
+**Response Fields:**
 
-| 字段名 | 说明 |
+| Field | Description |
 |--------|------|
-| id | 论文 ID |
-| title / title_zh | 标题（中英文） |
-| abstract / abstract_zh | 摘要（中英文） |
-| keywords / keywords_zh | 关键词（中英文） |
+| id | Paper ID |
+| title / title_zh | Title (bilingual) |
+| abstract / abstract_zh | Abstract (bilingual) |
+| keywords / keywords_zh | Keywords (bilingual) |
 | doi | DOI |
-| year | 年份 |
-| total | 总数 |
+| year | Year |
+| total | Total count |
 
-**curl 示例：**
+**curl Example:**
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/paper/list/citation/by/keywords?page=0&size=10&keywords=%5B%22deep+learning%22%2C%22object+detection%22%5D' \
@@ -374,36 +374,36 @@ curl -X GET \
 
 ---
 
-### 9. 按年份与期刊获取论文详情
+### 9. Paper Details by Year and Venue
 
-- **URL**：`GET /api/paper/platform/allpubs/more/detail/by/ts/org/venue`
-- **价格**：¥0.20/次
-- **说明**：根据论文发表年份与期刊获取论文标题、作者、DOI、关键词等详情
+- **URL**: `GET /api/paper/platform/allpubs/more/detail/by/ts/org/venue`
+- **Price**: ¥0.20/call
+- **Description**: Retrieve paper titles, authors, DOIs, keywords, and other details by publication year and journal.
 
-> **注意**：`venue_id` 与 `year` 须同时传入，仅传 `year` 接口返回 `null`。可先通过**期刊搜索**接口获取 `venue_id`。
+> **Note**: `venue_id` and `year` must be provided together; providing only `year` returns `null`. Use the **Venue Search** API first to obtain the `venue_id`.
 
-**请求参数：**
+**Request Parameters:**
 
-| 参数名 | 类型 | 必填 | 说明 |
+| Parameter | Type | Required | Description |
 |--------|------|------|------|
-| year | number | 是 | 论文发表年份 |
-| venue_id | string | 是 | 期刊 ID（通过期刊搜索接口获取；不传返回 null） |
+| year | number | Yes | Paper publication year |
+| venue_id | string | Yes | Journal ID (obtained via Venue Search; returns null if not provided) |
 
-**响应字段（主要）：**
+**Response Fields (main):**
 
-| 字段名 | 说明 |
+| Field | Description |
 |--------|------|
-| _id | 论文 ID |
-| title / title_zh | 标题（中英文） |
-| abstract | 摘要 |
-| authors | 作者数组（name/org/email/homepage/orc_id/`_id`） |
+| _id | Paper ID |
+| title / title_zh | Title (bilingual) |
+| abstract | Abstract |
+| authors | Author array (name/org/email/homepage/orc_id/`_id`) |
 | doi | DOI |
 | issn | ISSN |
-| keywords / keywords_zh | 关键词（中英文） |
-| year | 年份 |
-| venue | 期刊信息 |
+| keywords / keywords_zh | Keywords (bilingual) |
+| year | Year |
+| venue | Journal info |
 
-**curl 示例：**
+**curl Example:**
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/paper/platform/allpubs/more/detail/by/ts/org/venue?year=2023&venue_id=<VENUE_ID>' \
@@ -413,39 +413,39 @@ curl -X GET \
 
 ---
 
-## 学者类 API
+## Scholar APIs
 
-### 10. 学者搜索
+### 10. Scholar Search
 
-- **URL**：`POST /api/person/search`
-- **价格**：免费
-- **说明**：根据姓名（或机构）搜索学者，返回 ID、姓名、机构
+- **URL**: `POST /api/person/search`
+- **Price**: Free
+- **Description**: Search for scholars by name (or institution); returns ID, name, and institution.
 
-**请求参数：**
+**Request Parameters:**
 
-| 参数名 | 类型 | 必填 | 说明 |
+| Parameter | Type | Required | Description |
 |--------|------|------|------|
-| name | string | 否 | 学者姓名 |
-| org | string | 否 | 机构名 |
-| org_id | []string | 否 | 机构实体 ID 数组 |
-| offset | number | 否 | 起始位置（最大为 0） |
-| size | number | 否 | 返回条数（最大 10） |
+| name | string | No | Scholar name |
+| org | string | No | Institution name |
+| org_id | []string | No | Institution entity ID array |
+| offset | number | No | Starting position (maximum 0) |
+| size | number | No | Number of results (maximum 10) |
 
-**响应字段：**
+**Response Fields:**
 
-| 字段名 | 说明 |
+| Field | Description |
 |--------|------|
-| id | 学者 ID |
-| name | 英文姓名 |
-| name_zh | 中文姓名 |
-| org | 英文机构 |
-| org_zh | 中文机构 |
-| org_id | 机构 ID |
-| interests | 研究兴趣 |
-| n_citation | 引用量 |
-| total | 总数 |
+| id | Scholar ID |
+| name | Name (English) |
+| name_zh | Name (Chinese) |
+| org | Institution (English) |
+| org_zh | Institution (Chinese) |
+| org_id | Institution ID |
+| interests | Research interests |
+| n_citation | Citation count |
+| total | Total count |
 
-**curl 示例：**
+**curl Example:**
 ```bash
 curl -X POST \
   'https://datacenter.aminer.cn/gateway/open_platform/api/person/search' \
@@ -457,34 +457,34 @@ curl -X POST \
 
 ---
 
-### 11. 学者详情
+### 11. Scholar Details
 
-- **URL**：`GET /api/person/detail`
-- **价格**：¥1.00/次
-- **说明**：根据学者 ID 获取完整个人信息
+- **URL**: `GET /api/person/detail`
+- **Price**: ¥1.00/call
+- **Description**: Retrieve complete personal information by scholar ID.
 
-**请求参数：**
+**Request Parameters:**
 
-| 参数名 | 类型 | 必填 | 说明 |
+| Parameter | Type | Required | Description |
 |--------|------|------|------|
-| id | string | 是 | 学者 ID |
+| id | string | Yes | Scholar ID |
 
-**响应字段：**
+**Response Fields:**
 
-| 字段名 | 说明 |
+| Field | Description |
 |--------|------|
-| id / person_id | 学者 ID |
-| name / name_zh | 姓名（中英文） |
-| bio / bio_zh | 个人简介（中英文，不同时存在） |
-| edu / edu_zh | 教育经历（中英文） |
-| orgs / org_zhs | 机构列表（英文/中文） |
-| position / position_zh | 职称（中英文） |
-| domain | 研究领域 |
-| honor | 荣誉 |
-| award | 奖项 |
-| year | 年份 |
+| id / person_id | Scholar ID |
+| name / name_zh | Name (bilingual) |
+| bio / bio_zh | Personal bio (bilingual; not both present simultaneously) |
+| edu / edu_zh | Education history (bilingual) |
+| orgs / org_zhs | Institution list (English / Chinese) |
+| position / position_zh | Title (bilingual) |
+| domain | Research domain |
+| honor | Honors |
+| award | Awards |
+| year | Year |
 
-**curl 示例：**
+**curl Example:**
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/person/detail?id=53f3ae78dabfae4b34b0c75d' \
@@ -494,29 +494,29 @@ curl -X GET \
 
 ---
 
-### 12. 学者画像
+### 12. Scholar Portrait
 
-- **URL**：`GET /api/person/figure`
-- **价格**：¥0.50/次
-- **说明**：获取研究兴趣、领域及结构化工作/教育经历
+- **URL**: `GET /api/person/figure`
+- **Price**: ¥0.50/call
+- **Description**: Retrieve research interests, domains, and structured work/education history.
 
-**请求参数：**
+**Request Parameters:**
 
-| 参数名 | 类型 | 必填 | 说明 |
+| Parameter | Type | Required | Description |
 |--------|------|------|------|
-| id | string | 是 | 学者 ID |
+| id | string | Yes | Scholar ID |
 
-**响应字段：**
+**Response Fields:**
 
-| 字段名 | 说明 |
+| Field | Description |
 |--------|------|
-| id | 学者 ID |
-| ai_interests | 研究兴趣列表 |
-| ai_domain | 研究领域列表 |
-| edus | 结构化教育经历 |
-| works | 结构化工作经历 |
+| id | Scholar ID |
+| ai_interests | Research interest list |
+| ai_domain | Research domain list |
+| edus | Structured education history |
+| works | Structured work history |
 
-**curl 示例：**
+**curl Example:**
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/person/figure?id=53f3ae78dabfae4b34b0c75d' \
@@ -526,27 +526,27 @@ curl -X GET \
 
 ---
 
-### 13. 学者论文
+### 13. Scholar Papers
 
-- **URL**：`GET /api/person/paper/relation`
-- **价格**：¥1.50/次
-- **说明**：获取学者发表的论文列表（ID + 标题）
+- **URL**: `GET /api/person/paper/relation`
+- **Price**: ¥1.50/call
+- **Description**: Retrieve a list of papers published by a scholar (ID + title).
 
-**请求参数：**
+**Request Parameters:**
 
-| 参数名 | 类型 | 必填 | 说明 |
+| Parameter | Type | Required | Description |
 |--------|------|------|------|
-| id | string | 是 | 学者 ID |
+| id | string | Yes | Scholar ID |
 
-**响应字段：**
+**Response Fields:**
 
-| 字段名 | 说明 |
+| Field | Description |
 |--------|------|
-| author_id | 学者 ID |
-| id | 论文 ID |
-| title | 论文标题 |
+| author_id | Scholar ID |
+| id | Paper ID |
+| title | Paper title |
 
-**curl 示例：**
+**curl Example:**
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/person/paper/relation?id=53f3ae78dabfae4b34b0c75d' \
@@ -556,29 +556,29 @@ curl -X GET \
 
 ---
 
-### 14. 学者专利
+### 14. Scholar Patents
 
-- **URL**：`GET /api/person/patent/relation`
-- **价格**：¥1.50/次
-- **说明**：获取学者相关的专利列表
+- **URL**: `GET /api/person/patent/relation`
+- **Price**: ¥1.50/call
+- **Description**: Retrieve a list of patents associated with a scholar.
 
-**请求参数：**
+**Request Parameters:**
 
-| 参数名 | 类型 | 必填 | 说明 |
+| Parameter | Type | Required | Description |
 |--------|------|------|------|
-| id | string | 是 | 学者 ID |
+| id | string | Yes | Scholar ID |
 
-**响应字段：**
+**Response Fields:**
 
-| 字段名 | 说明 |
+| Field | Description |
 |--------|------|
-| patent_id | 专利 ID |
-| person_id | 学者 ID |
-| title | 专利标题 |
-| en | 英文标题 |
-| zh | 中文标题 |
+| patent_id | Patent ID |
+| person_id | Scholar ID |
+| title | Patent title |
+| en | Title (English) |
+| zh | Title (Chinese) |
 
-**curl 示例：**
+**curl Example:**
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/person/patent/relation?id=53f3ae78dabfae4b34b0c75d' \
@@ -588,33 +588,33 @@ curl -X GET \
 
 ---
 
-### 15. 学者项目
+### 15. Scholar Projects
 
-- **URL**：`GET /api/project/person/v3/open`
-- **价格**：¥3.00/次
-- **说明**：获取学者参与的科研项目（资助金额、时间、来源）
+- **URL**: `GET /api/project/person/v3/open`
+- **Price**: ¥3.00/call
+- **Description**: Retrieve research projects a scholar has participated in (funding amount, dates, source).
 
-**请求参数：**
+**Request Parameters:**
 
-| 参数名 | 类型 | 必填 | 说明 |
+| Parameter | Type | Required | Description |
 |--------|------|------|------|
-| id | string | 否 | 学者 ID |
+| id | string | No | Scholar ID |
 
-**响应字段：**
+**Response Fields:**
 
-| 字段名 | 说明 |
+| Field | Description |
 |--------|------|
-| id | 项目 ID |
-| titles | 项目标题 |
-| country | 国家 |
-| project_source | 项目来源 |
-| fund_amount | 资助金额 |
-| fund_currency | 资助货币 |
-| start_date | 开始时间 |
-| end_date | 结束时间 |
-| total | 总数 |
+| id | Project ID |
+| titles | Project title |
+| country | Country |
+| project_source | Project source |
+| fund_amount | Funding amount |
+| fund_currency | Funding currency |
+| start_date | Start date |
+| end_date | End date |
+| total | Total count |
 
-**curl 示例：**
+**curl Example:**
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/project/person/v3/open?id=53f3ae78dabfae4b34b0c75d' \
@@ -624,29 +624,29 @@ curl -X GET \
 
 ---
 
-## 机构类 API
+## Institution APIs
 
-### 16. 机构搜索
+### 16. Org Search
 
-- **URL**：`POST /api/organization/search`
-- **价格**：免费
-- **说明**：根据名称关键词搜索机构 ID 和名称
+- **URL**: `POST /api/organization/search`
+- **Price**: Free
+- **Description**: Search for institution IDs and names by name keyword.
 
-**请求参数：**
+**Request Parameters:**
 
-| 参数名 | 类型 | 必填 | 说明 |
+| Parameter | Type | Required | Description |
 |--------|------|------|------|
-| orgs | []string | 否 | 机构名称数组 |
+| orgs | []string | No | Institution name array |
 
-**响应字段：**
+**Response Fields:**
 
-| 字段名 | 说明 |
+| Field | Description |
 |--------|------|
-| org_id | 机构 ID |
-| org_name | 机构名称 |
-| total | 总数 |
+| org_id | Institution ID |
+| org_name | Institution name |
+| total | Total count |
 
-**curl 示例：**
+**curl Example:**
 ```bash
 curl -X POST \
   'https://datacenter.aminer.cn/gateway/open_platform/api/organization/search' \
@@ -658,33 +658,33 @@ curl -X POST \
 
 ---
 
-### 17. 机构详情
+### 17. Org Details
 
-- **URL**：`POST /api/organization/detail`
-- **价格**：¥0.01/次
-- **说明**：根据机构 ID 获取详情
+- **URL**: `POST /api/organization/detail`
+- **Price**: ¥0.01/call
+- **Description**: Retrieve institution details by institution ID.
 
-**请求参数：**
+**Request Parameters:**
 
-| 参数名 | 类型 | 必填 | 说明 |
+| Parameter | Type | Required | Description |
 |--------|------|------|------|
-| ids | []string | 是 | 机构 ID 数组 |
+| ids | []string | Yes | Institution ID array |
 
-**响应字段：**
+**Response Fields:**
 
-| 字段名 | 说明 |
+| Field | Description |
 |--------|------|
-| id | 机构 ID |
-| name / name_en / name_zh | 机构名（原始/英文/中文） |
-| acronyms | 简称 |
-| aliases | 别名列表 |
-| details | 机构详细描述 |
-| type | 机构类型（大学/企业等） |
-| location | 地理位置 |
-| language | 语言 |
-| total | 总数 |
+| id | Institution ID |
+| name / name_en / name_zh | Institution name (raw/English/Chinese) |
+| acronyms | Abbreviation |
+| aliases | Alias list |
+| details | Detailed institution description |
+| type | Institution type (university/enterprise, etc.) |
+| location | Geographic location |
+| language | Language |
+| total | Total count |
 
-**curl 示例：**
+**curl Example:**
 ```bash
 curl -X POST \
   'https://datacenter.aminer.cn/gateway/open_platform/api/organization/detail' \
@@ -696,30 +696,30 @@ curl -X POST \
 
 ---
 
-### 18. 机构学者
+### 18. Org Scholars
 
-- **URL**：`GET /api/organization/person/relation`
-- **价格**：¥0.50/次
-- **说明**：获取机构下的学者列表（每次返回 10 条）
+- **URL**: `GET /api/organization/person/relation`
+- **Price**: ¥0.50/call
+- **Description**: Retrieve the list of scholars affiliated with an institution (10 results per call).
 
-**请求参数：**
+**Request Parameters:**
 
-| 参数名 | 类型 | 必填 | 说明 |
+| Parameter | Type | Required | Description |
 |--------|------|------|------|
-| org_id | string | 否 | 机构 ID |
-| offset | number | 否 | 起始位置（每次固定返回 10 条） |
+| org_id | string | No | Institution ID |
+| offset | number | No | Starting position (returns 10 results per call) |
 
-**响应字段：**
+**Response Fields:**
 
-| 字段名 | 说明 |
+| Field | Description |
 |--------|------|
-| id | 学者 ID |
-| name / name_zh | 学者姓名（中英文） |
-| org / org_zh | 机构（中英文） |
-| org_id | 机构 ID |
-| total | 总数 |
+| id | Scholar ID |
+| name / name_zh | Scholar name (bilingual) |
+| org / org_zh | Institution (bilingual) |
+| org_id | Institution ID |
+| total | Total count |
 
-**curl 示例：**
+**curl Example:**
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/organization/person/relation?org_id=5f71b2091c455f439fe9a7d7&offset=0' \
@@ -729,29 +729,29 @@ curl -X GET \
 
 ---
 
-### 19. 机构论文
+### 19. Org Papers
 
-- **URL**：`GET /api/organization/paper/relation`
-- **价格**：¥0.10/次
-- **说明**：获取机构学者发表过的论文列表（每次返回 10 条）
+- **URL**: `GET /api/organization/paper/relation`
+- **Price**: ¥0.10/call
+- **Description**: Retrieve the list of papers published by scholars at an institution (10 results per call).
 
-**请求参数：**
+**Request Parameters:**
 
-| 参数名 | 类型 | 必填 | 说明 |
+| Parameter | Type | Required | Description |
 |--------|------|------|------|
-| org_id | string | 是 | 机构 ID |
-| offset | number | 是 | 起始位置（每次固定返回 10 条） |
+| org_id | string | Yes | Institution ID |
+| offset | number | Yes | Starting position (returns 10 results per call) |
 
-**响应字段：**
+**Response Fields:**
 
-| 字段名 | 说明 |
+| Field | Description |
 |--------|------|
-| id | 论文 ID |
-| title / title_zh | 标题（中英文） |
+| id | Paper ID |
+| title / title_zh | Title (bilingual) |
 | doi | DOI |
-| total | 总数 |
+| total | Total count |
 
-**curl 示例：**
+**curl Example:**
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/organization/paper/relation?org_id=5f71b2091c455f439fe9a7d7&offset=0' \
@@ -761,28 +761,28 @@ curl -X GET \
 
 ---
 
-### 20. 机构专利
+### 20. Org Patents
 
-- **URL**：`GET /api/organization/patent/relation`
-- **价格**：¥0.10/次
-- **说明**：获取机构拥有的专利 ID 列表，支持分页，单次最多返回 10000 条
+- **URL**: `GET /api/organization/patent/relation`
+- **Price**: ¥0.10/call
+- **Description**: Retrieve the list of patent IDs owned by an institution; supports pagination with up to 10,000 results per call.
 
-**请求参数：**
+**Request Parameters:**
 
-| 参数名 | 类型 | 必填 | 说明 |
+| Parameter | Type | Required | Description |
 |--------|------|------|------|
-| id | string | 是 | 机构 ID |
-| page | number | 否 | 页码（从 1 开始） |
-| page_size | number | 否 | 每页条数，最大 10000 |
+| id | string | Yes | Institution ID |
+| page | number | No | Page number (starts at 1) |
+| page_size | number | No | Items per page; maximum 10,000 |
 
-**响应字段：**
+**Response Fields:**
 
-| 字段名 | 说明 |
+| Field | Description |
 |--------|------|
-| id | 专利 ID |
-| total | 总数 |
+| id | Patent ID |
+| total | Total count |
 
-**curl 示例：**
+**curl Example:**
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/organization/patent/relation?id=6233173d0a6eb145604733e2&page=1&page_size=100' \
@@ -792,25 +792,25 @@ curl -X GET \
 
 ---
 
-### 21. 机构消歧
+### 21. Org Disambiguation
 
-- **URL**：`POST /api/organization/na`
-- **价格**：¥0.01/次
-- **说明**：根据机构字符串（含缩写/别名）获取标准化机构名称
+- **URL**: `POST /api/organization/na`
+- **Price**: ¥0.01/call
+- **Description**: Retrieve the standardized institution name from an institution string (including abbreviations/aliases).
 
-**请求参数：**
+**Request Parameters:**
 
-| 参数名 | 类型 | 必填 | 说明 |
+| Parameter | Type | Required | Description |
 |--------|------|------|------|
-| org | string | 是 | 机构名称（可含别名/缩写） |
+| org | string | Yes | Institution name (may include aliases/abbreviations) |
 
-**响应字段：**
+**Response Fields:**
 
-| 字段名 | 说明 |
+| Field | Description |
 |--------|------|
-| org_name | 归一化机构名称 |
+| org_name | Normalized institution name |
 
-**curl 示例：**
+**curl Example:**
 ```bash
 curl -X POST \
   'https://datacenter.aminer.cn/gateway/open_platform/api/organization/na' \
@@ -822,29 +822,29 @@ curl -X POST \
 
 ---
 
-### 22. 机构消歧 pro
+### 22. Org Disambiguation Pro
 
-- **URL**：`POST /api/organization/na/pro`
-- **价格**：¥0.05/次
-- **说明**：从机构字符串中提取一级机构和二级机构的 ID（推荐用于工作流）
+- **URL**: `POST /api/organization/na/pro`
+- **Price**: ¥0.05/call
+- **Description**: Extract the IDs of primary and secondary institutions from an institution string (recommended for workflows).
 
-**请求参数：**
+**Request Parameters:**
 
-| 参数名 | 类型 | 必填 | 说明 |
+| Parameter | Type | Required | Description |
 |--------|------|------|------|
-| org | string | 是 | 机构名称 |
+| org | string | Yes | Institution name |
 
-**响应字段：**
+**Response Fields:**
 
-| 字段名 | 说明 |
+| Field | Description |
 |--------|------|
-| 一级 | 一级机构名称 |
-| 一级ID | 一级机构 ID |
-| 二级 | 二级机构名称 |
-| 二级ID | 二级机构 ID |
-| Total / total | 总数 |
+| 一级 | Primary institution name |
+| 一级ID | Primary institution ID |
+| 二级 | Secondary institution name |
+| 二级ID | Secondary institution ID |
+| Total / total | Total count |
 
-**curl 示例：**
+**curl Example:**
 ```bash
 curl -X POST \
   'https://datacenter.aminer.cn/gateway/open_platform/api/organization/na/pro' \
@@ -856,30 +856,30 @@ curl -X POST \
 
 ---
 
-## 期刊类 API
+## Journal APIs
 
-### 23. 期刊搜索
+### 23. Venue Search
 
-- **URL**：`POST /api/venue/search`
-- **价格**：免费
-- **说明**：根据期刊名称搜索期刊 ID 和标准名称
+- **URL**: `POST /api/venue/search`
+- **Price**: Free
+- **Description**: Search for journal IDs and standard names by journal name.
 
-**请求参数：**
+**Request Parameters:**
 
-| 参数名 | 类型 | 必填 | 说明 |
+| Parameter | Type | Required | Description |
 |--------|------|------|------|
-| name | string | 否 | 期刊名称（支持模糊搜索） |
+| name | string | No | Journal name (supports fuzzy search) |
 
-**响应字段：**
+**Response Fields:**
 
-| 字段名 | 说明 |
+| Field | Description |
 |--------|------|
-| id | 期刊 ID |
-| name_en | 期刊英文名称 |
-| name_zh | 期刊中文名称 |
-| total | 总数 |
+| id | Journal ID |
+| name_en | Journal name (English) |
+| name_zh | Journal name (Chinese) |
+| total | Total count |
 
-**curl 示例：**
+**curl Example:**
 ```bash
 curl -X POST \
   'https://datacenter.aminer.cn/gateway/open_platform/api/venue/search' \
@@ -891,30 +891,30 @@ curl -X POST \
 
 ---
 
-### 24. 期刊详情
+### 24. Venue Details
 
-- **URL**：`POST /api/venue/detail`
-- **价格**：¥0.20/次
-- **说明**：根据期刊 ID 获取 ISSN、简称、类型等详情
+- **URL**: `POST /api/venue/detail`
+- **Price**: ¥0.20/call
+- **Description**: Retrieve ISSN, abbreviation, type, and other details by journal ID.
 
-**请求参数：**
+**Request Parameters:**
 
-| 参数名 | 类型 | 必填 | 说明 |
+| Parameter | Type | Required | Description |
 |--------|------|------|------|
-| id | string | 是 | 期刊 ID |
+| id | string | Yes | Journal ID |
 
-**响应字段：**
+**Response Fields:**
 
-| 字段名 | 说明 |
+| Field | Description |
 |--------|------|
-| id | 期刊 ID |
-| name / name_en / name_zh | 名称（原始/英文/中文） |
+| id | Journal ID |
+| name / name_en / name_zh | Name (raw/English/Chinese) |
 | issn | ISSN |
 | eissn | EISSN |
-| alias | 别名 |
-| type | 期刊类型 |
+| alias | Alias |
+| type | Journal type |
 
-**curl 示例：**
+**curl Example:**
 ```bash
 curl -X POST \
   'https://datacenter.aminer.cn/gateway/open_platform/api/venue/detail' \
@@ -926,32 +926,32 @@ curl -X POST \
 
 ---
 
-### 25. 期刊论文
+### 25. Venue Papers
 
-- **URL**：`POST /api/venue/paper/relation`
-- **价格**：¥0.10/次
-- **说明**：根据期刊 ID 获取论文列表（支持按年份筛选）
+- **URL**: `POST /api/venue/paper/relation`
+- **Price**: ¥0.10/call
+- **Description**: Retrieve a list of papers for a journal by journal ID (supports year filtering).
 
-**请求参数：**
+**Request Parameters:**
 
-| 参数名 | 类型 | 必填 | 说明 |
+| Parameter | Type | Required | Description |
 |--------|------|------|------|
-| id | string | 是 | 期刊 ID |
-| offset | number | 否 | 起始位置 |
-| limit | number | 否 | 返回条数 |
-| year | number | 否 | 按年份筛选 |
+| id | string | Yes | Journal ID |
+| offset | number | No | Starting position |
+| limit | number | No | Number of results to return |
+| year | number | No | Filter by year |
 
-**响应字段：**
+**Response Fields:**
 
-| 字段名 | 说明 |
+| Field | Description |
 |--------|------|
-| id | 论文 ID |
-| title | 论文标题 |
-| year | 年份 |
-| offset | 当前偏移量 |
-| total | 总数 |
+| id | Paper ID |
+| title | Paper title |
+| year | Year |
+| offset | Current offset |
+| total | Total count |
 
-**curl 示例：**
+**curl Example:**
 ```bash
 curl -X POST \
   'https://datacenter.aminer.cn/gateway/open_platform/api/venue/paper/relation' \
@@ -963,68 +963,68 @@ curl -X POST \
 
 ---
 
-## 专利类 API
+## Patent APIs
 
-### 26. 专利搜索
+### 26. Patent Search
 
-- **URL**：`POST /api/patent/search`
-- **价格**：免费
-- **说明**：根据专利名称/关键词搜索专利
+- **URL**: `POST /api/patent/search`
+- **Price**: Free
+- **Description**: Search for patents by patent name/keyword.
 
-**请求参数：**
+**Request Parameters:**
 
-| 参数名 | 类型 | 必填 | 说明 |
+| Parameter | Type | Required | Description |
 |--------|------|------|------|
-| query | string | 是 | 查询字段（专利标题/关键词） |
-| page | number | 是 | 页数 |
-| size | number | 是 | 每页展示条数 |
+| query | string | Yes | Query field (patent title/keyword) |
+| page | number | Yes | Page number |
+| size | number | Yes | Items per page |
 
-**响应字段：**
+**Response Fields:**
 
-| 字段名 | 说明 |
+| Field | Description |
 |--------|------|
-| id | 专利 ID |
-| title | 专利英文标题 |
-| title_zh | 专利中文标题 |
+| id | Patent ID |
+| title | Patent title (English) |
+| title_zh | Patent title (Chinese) |
 
-**curl 示例：**
+**curl Example:**
 ```bash
 curl -X POST \
   'https://datacenter.aminer.cn/gateway/open_platform/api/patent/search' \
   -H 'Content-Type: application/json;charset=utf-8' \
   -H 'Authorization: <TOKEN>' \
   -H 'X-Platform: openclaw' \
-  -d '{"query": "量子计算芯片", "page": 0, "size": 10}'
+  -d '{"query": "quantum computing chip", "page": 0, "size": 10}'
 ```
 
 ---
 
-### 27. 专利信息
+### 27. Patent Info
 
-- **URL**：`GET /api/patent/info`
-- **价格**：免费
-- **说明**：根据专利 ID 获取基础信息（标题、专利号、发明人、国家）
+- **URL**: `GET /api/patent/info`
+- **Price**: Free
+- **Description**: Retrieve basic patent information (title, patent number, inventors, country) by patent ID.
 
-**请求参数：**
+**Request Parameters:**
 
-| 参数名 | 类型 | 必填 | 说明 |
+| Parameter | Type | Required | Description |
 |--------|------|------|------|
-| id | string | 是 | 专利 ID |
+| id | string | Yes | Patent ID |
 
-**响应字段：**
+**Response Fields:**
 
-| 字段名 | 说明 |
+| Field | Description |
 |--------|------|
-| id | 专利 ID |
-| title / en | 专利标题（英文） |
-| app_num | 申请号 |
-| pub_num | 发布号 |
-| pub_kind | 发布类型 |
-| inventor | 发明人 |
-| country | 国家 |
-| sequence | 顺序 |
+| id | Patent ID |
+| title / en | Patent title (English) |
+| app_num | Application number |
+| pub_num | Publication number |
+| pub_kind | Publication type |
+| inventor | Inventor |
+| country | Country |
+| sequence | Sequence |
 
-**curl 示例：**
+**curl Example:**
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/patent/info?id=<PATENT_ID>' \
@@ -1034,40 +1034,40 @@ curl -X GET \
 
 ---
 
-### 28. 专利详情
+### 28. Patent Details
 
-- **URL**：`GET /api/patent/detail`
-- **价格**：¥0.01/次
-- **说明**：根据专利 ID 获取完整详情（含摘要、申请日、受让人、IPC 分类等）
+- **URL**: `GET /api/patent/detail`
+- **Price**: ¥0.01/call
+- **Description**: Retrieve full patent details by patent ID (including abstract, filing date, assignee, IPC classification, etc.).
 
-**请求参数：**
+**Request Parameters:**
 
-| 参数名 | 类型 | 必填 | 说明 |
+| Parameter | Type | Required | Description |
 |--------|------|------|------|
-| id | string | 是 | 专利 ID |
+| id | string | Yes | Patent ID |
 
-**响应字段：**
+**Response Fields:**
 
-| 字段名 | 说明 |
+| Field | Description |
 |--------|------|
-| id | 专利 ID |
-| title | 专利标题 |
-| abstract | 摘要 |
-| app_date | 申请日期 |
-| app_num | 申请号 |
-| pub_date | 公开日期 |
-| pub_num | 公开号 |
-| pub_kind | 公开类型 |
-| assignee | 受让人 |
-| inventor | 发明人 |
-| country | 国别 |
-| ipc | IPC 分类号 |
-| ipcr | IPCR 分类号 |
-| cpc | CPC 分类号 |
-| priority | 优先权信息 |
-| description | 说明书 |
+| id | Patent ID |
+| title | Patent title |
+| abstract | Abstract |
+| app_date | Filing date |
+| app_num | Application number |
+| pub_date | Publication date |
+| pub_num | Publication number |
+| pub_kind | Publication type |
+| assignee | Assignee |
+| inventor | Inventor |
+| country | Country |
+| ipc | IPC classification code |
+| ipcr | IPCR classification code |
+| cpc | CPC classification code |
+| priority | Priority info |
+| description | Description |
 
-**curl 示例：**
+**curl Example:**
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/patent/detail?id=<PATENT_ID>' \
@@ -1077,12 +1077,12 @@ curl -X GET \
 
 ---
 
-## 附录：API 价格汇总
+## Appendix: API Pricing Summary
 
-| 类别 | 免费接口 | 收费接口 |
+| Category | Free APIs | Paid APIs |
 |------|---------|---------|
-| 论文 | 论文搜索、论文信息 | 论文搜索pro(¥0.01)、论文详情(¥0.01)、论文引用(¥0.10)、论文问答搜索(¥0.05)、论文搜索接口(¥0.30)、论文批量查询(¥0.10)、按条件获取(¥0.20) |
-| 学者 | 学者搜索 | 学者详情(¥1.00)、学者画像(¥0.50)、学者论文(¥1.50)、学者专利(¥1.50)、学者项目(¥3.00) |
-| 机构 | 机构搜索 | 机构详情(¥0.01)、机构学者(¥0.50)、机构论文(¥0.10)、机构专利(¥0.10)、机构消歧(¥0.01)、机构消歧pro(¥0.05) |
-| 期刊 | 期刊搜索 | 期刊详情(¥0.20)、期刊论文(¥0.10) |
-| 专利 | 专利搜索、专利信息 | 专利详情(¥0.01) |
+| Paper | Paper Search, Paper Info | Paper Search Pro(¥0.01), Paper Details(¥0.01), Paper Citations(¥0.10), Paper QA Search(¥0.05), Paper Search by Venue(¥0.30), Paper Batch Query(¥0.10), By Condition(¥0.20) |
+| Scholar | Scholar Search | Scholar Details(¥1.00), Scholar Portrait(¥0.50), Scholar Papers(¥1.50), Scholar Patents(¥1.50), Scholar Projects(¥3.00) |
+| Institution | Org Search | Org Details(¥0.01), Org Scholars(¥0.50), Org Papers(¥0.10), Org Patents(¥0.10), Org Disambiguation(¥0.01), Org Disambiguation Pro(¥0.05) |
+| Journal | Venue Search | Venue Details(¥0.20), Venue Papers(¥0.10) |
+| Patent | Patent Search, Patent Info | Patent Details(¥0.01) |

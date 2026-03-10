@@ -3,67 +3,67 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "我想了解 Andrew Ng（吴恩达）的完整学术画像，包括他的研究方向、发表了哪些重要论文、有没有专利、参与过哪些科研项目。帮我用 AMiner 的 API 查一下，我的 token 是 <YOUR_TOKEN>",
-      "expected_output": "运行 scholar_profile 工作流，依次调用学者搜索→学者详情→学者画像→学者论文→学者专利→学者项目，输出包含研究兴趣、论文列表、专利列表等字段的 JSON 结果",
+      "prompt": "I'd like to understand Andrew Ng's complete academic profile, including his research interests, important papers he has published, any patents, and research projects he has participated in. Please use the AMiner API to look this up for me. My token is <YOUR_TOKEN>",
+      "expected_output": "Run the scholar_profile workflow, calling in sequence: scholar search → scholar details → scholar portrait → scholar papers → scholar patents → scholar projects. Output a JSON result containing fields such as research interests, paper list, and patent list.",
       "files": [],
       "expectations": [
-        "调用了学者搜索 API（person_search）找到 Andrew Ng",
-        "调用了学者详情 API（person_detail）获取个人简介",
-        "调用了学者画像 API（person_figure）获取研究兴趣和领域",
-        "调用了学者论文 API（person_paper_relation）获取论文列表",
-        "输出包含 selected.name 字段且值为 Andrew Ng",
-        "输出包含 figure 或 detail 字段"
+        "Called the Scholar Search API (person_search) to find Andrew Ng",
+        "Called the Scholar Details API (person_detail) to retrieve the personal bio",
+        "Called the Scholar Portrait API (person_figure) to retrieve research interests and domains",
+        "Called the Scholar Papers API (person_paper_relation) to retrieve the paper list",
+        "Output contains the selected.name field with value Andrew Ng",
+        "Output contains the figure or detail field"
       ]
     },
     {
       "id": 2,
-      "prompt": "帮我深度分析论文《Attention Is All You Need》——先找到它，然后获取完整的论文详情（摘要、作者、年份），再看看它引用了哪些文献。我的 AMiner token 是 <YOUR_TOKEN>",
-      "expected_output": "运行 paper_deep_dive 工作流，搜索论文→获取详情→获取引用关系，输出论文摘要、作者列表、DOI、引用的论文列表",
+      "prompt": "Help me deep-dive into the paper 'Attention Is All You Need' — find it, retrieve its full details (abstract, authors, year), and then see what references it cites. My AMiner token is <YOUR_TOKEN>",
+      "expected_output": "Run the paper_deep_dive workflow: search for the paper → retrieve details → retrieve citation relationships. Output the paper abstract, author list, DOI, and list of cited papers.",
       "files": [],
       "expectations": [
-        "调用了论文搜索 API 找到目标论文",
-        "调用了论文详情 API（paper_detail）获取摘要",
-        "调用了论文引用 API（paper_relation）获取引用列表",
-        "输出包含 detail 字段且其中有 abstract 字段",
-        "输出包含 citations_count 或 citations_preview 字段"
+        "Called a Paper Search API to locate the target paper",
+        "Called the Paper Details API (paper_detail) to retrieve the abstract",
+        "Called the Paper Citations API (paper_relation) to retrieve the citation list",
+        "Output contains the detail field with an abstract sub-field",
+        "Output contains the citations_count or citations_preview field"
       ]
     },
     {
       "id": 3,
-      "prompt": "我需要分析麻省理工学院（MIT）的科研实力，想知道他们机构下有哪些知名学者、发表了哪些论文、有什么专利。请用 AMiner API 帮我整理一份报告。Token：<YOUR_TOKEN>",
-      "expected_output": "运行 org_analysis 工作流，先用机构消歧 pro 找到 MIT 的机构 ID，再并行获取机构详情、学者列表、论文列表，整理成报告",
+      "prompt": "I need to analyze MIT's research strength — I'd like to know which prominent scholars are affiliated with them, what papers they have published, and what patents they hold. Please use the AMiner API to compile a report for me. Token: <YOUR_TOKEN>",
+      "expected_output": "Run the org_analysis workflow: use Org Disambiguation Pro to find MIT's institution ID, then fetch institution details, scholar list, and paper list in parallel, and compile into a report.",
       "files": [],
       "expectations": [
-        "调用了机构消歧 pro API（org_disambiguate_pro）获取机构 ID",
-        "调用了机构详情 API（org_detail）获取 MIT 简介",
-        "调用了机构学者 API（org_person_relation）获取学者列表",
-        "调用了机构论文 API（org_paper_relation）获取论文列表",
-        "输出包含 org_id 字段",
-        "输出包含 scholars 或 papers 字段"
+        "Called the Org Disambiguation Pro API (org_disambiguate_pro) to obtain the institution ID",
+        "Called the Org Details API (org_detail) to retrieve MIT's description",
+        "Called the Org Scholars API (org_person_relation) to retrieve the scholar list",
+        "Called the Org Papers API (org_paper_relation) to retrieve the paper list",
+        "Output contains the org_id field",
+        "Output contains the scholars or papers field"
       ]
     },
     {
       "id": 4,
-      "prompt": "帮我查一下 Andrew Ng 的论文趋势",
-      "expected_output": "先检查到用户未提供 token，立即停止后续 API 调用，并引导用户去 AMiner 控制台获取 token",
+      "prompt": "Help me look up Andrew Ng's publication trends",
+      "expected_output": "Detect that the user has not provided a token; immediately stop all subsequent API calls and guide the user to obtain a token from the AMiner Console.",
       "files": [],
       "expectations": [
-        "明确告知当前缺少 token，无法继续调用 AMiner API",
-        "没有执行任何 API 调用",
-        "提供控制台链接 https://open.aminer.cn/open/board?tab=control",
-        "提示用户拿到 token 后再继续"
+        "Clearly inform the user that a token is currently missing and AMiner API calls cannot continue",
+        "No API calls were made",
+        "Provide the console link https://open.aminer.cn/open/board?tab=control",
+        "Prompt the user to continue after obtaining a token"
       ]
     },
     {
       "id": 5,
-      "prompt": "帮我在 AMiner 上查斯坦福大学李飞飞的发文，给我引用量最高的5篇和最新5篇。我的 token 是 <YOUR_TOKEN>",
-      "expected_output": "优先使用 paper_qa_search 并结合 author_id/org_id 过滤。先返回引用量最高5篇（force_citation_sort），再返回最新5篇（force_year_sort）",
+      "prompt": "Help me look up Fei-Fei Li from Stanford University on AMiner and give me her 5 most-cited papers and her 5 most recent papers. My token is <YOUR_TOKEN>",
+      "expected_output": "Prefer paper_qa_search combined with author_id/org_id filters. First return the 5 most-cited papers (force_citation_sort), then return the 5 most recent papers (force_year_sort).",
       "files": [],
       "expectations": [
-        "调用了学者搜索 API（person_search）用于确认 Fei-Fei Li 的 author_id",
-        "调用 paper_qa_search 时使用了 author_id 和 org_id 过滤",
-        "分别执行了按引用量排序和按年份排序两次查询",
-        "每组结果返回最多 5 篇论文标题与论文 ID"
+        "Called the Scholar Search API (person_search) to confirm Fei-Fei Li's author_id",
+        "Called paper_qa_search with author_id and org_id filters",
+        "Executed two separate queries: one sorted by citation count and one sorted by year",
+        "Each result set returns at most 5 paper titles and paper IDs"
       ]
     }
   ]

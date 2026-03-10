@@ -1,13 +1,13 @@
 ---
 name: aminer-data-search
-version: 1.0.6
+version: 1.0.7
 author: AMiner
 contact: report@aminer.cn
 description: >
-  使用 AMiner 开放平台 API 进行学术数据查询与分析。当用户需要查询学者信息、论文详情、机构数据、期刊内容或专利信息时使用此 skill。
-  触发场景：提到 AMiner、学术数据查询、查论文/学者/机构/期刊/专利、学术问答搜索、引用分析、科研机构分析、学者画像、论文引用链、期刊投稿分析等。
-  支持 6 大组合工作流（学者全景分析、论文深度挖掘、机构研究力分析、期刊论文监控、学术智能问答、专利链分析）以及 28 个独立 API 的直接调用。
-  即使用户只说"帮我查一下 XXX 学者"或"找找关于 XXX 的论文"，也应主动使用此 skill。
+  Use the AMiner Open Platform API for academic data queries and analysis. Use this skill when users need to look up scholar profiles, paper details, institution data, journal content, or patent information.
+  Trigger scenarios: mentions of AMiner, academic data queries, searching for papers/scholars/institutions/journals/patents, academic Q&A search, citation analysis, research institution analysis, scholar portraits, paper citation chains, journal submission analysis, etc.
+  Supports 6 combined workflows (Scholar Profile, Paper Deep Dive, Org Analysis, Venue Papers, Paper QA Search, Patent Analysis) and direct calls to all 28 individual APIs.
+  Even if the user simply says "look up scholar XXX" or "find papers about XXX", proactively use this skill.
 metadata:
   {
     "openclaw":
@@ -19,321 +19,321 @@ metadata:
 
 ---
 
-# AMiner 开放平台学术数据查询
+# AMiner Open Platform Academic Data Query
 
-AMiner 是全球领先的学术数据平台，提供学者、论文、机构、期刊、专利等全维度学术数据。
-本 skill 涵盖全部 28 个开放 API，并将它们组合成 6 大实用工作流。
-使用前请先在控制台生成 token，并建议写入环境变量 `AMINER_API_KEY` 供脚本自动读取。
+AMiner is a globally leading academic data platform that provides comprehensive academic data covering scholars, papers, institutions, journals, patents, and more.
+This skill covers all 28 open APIs and organizes them into 6 practical workflows.
+Before use, please generate a token in the console and set it as the environment variable `AMINER_API_KEY` for automatic script access.
 
-- **API 文档**：https://open.aminer.cn/open/docs
-- **控制台（生成 Token）**：https://open.aminer.cn/open/board?tab=control
-
----
-
-## 高优先级强制规则（重点）
-
-以下四条为**最高优先级**，在任何查询任务中都必须优先遵守：
-
-1. **Token 安全**：只允许检查 `AMINER_API_KEY` 是否存在，严禁在任何位置泄露 token 明文（包括终端输出、日志、示例结果、调试信息）。
-2. **费用控制**：必须优先采用最优组合查询，禁止无差别全量详情拉取；当命中结果很多且用户未指定数量时，默认仅查询前 10 条详情。
-3. **免费优先**：在用户未明确要求更深字段/更高精度前，优先使用免费接口；仅在免费接口无法满足需求时再升级到收费接口。
-4. **结果链接**：只要使用本 skill 且返回结果中出现实体（论文/学者/专利/期刊），无论任何场景与输出格式，都必须在每个实体后附上可访问 URL。
-
-实体 URL 模板（强制使用）：
-- 论文：`https://www.aminer.cn/pub/{论文id}`
-- 学者：`https://www.aminer.cn/profile/{学者id}`
-- 专利：`https://www.aminer.cn/patent/{专利id}`
-- 期刊：`https://www.aminer.cn/open/journal/detail/{期刊id}`
-
-> 强制执行说明：本规则适用于所有返回结果（含摘要、列表、详情、对比分析、工作流输出、raw 输出转述）。只要出现实体且有可用 ID，就必须附链接。
-
-> 违反以上任一条，视为流程不合规，必须立即中止并修正后再继续。
+- **API Documentation**: https://open.aminer.cn/open/docs
+- **Console (Generate Token)**: https://open.aminer.cn/open/board?tab=control
 
 ---
 
-## 第一步：先检查环境变量 Token（必须）
+## High-Priority Mandatory Rules (Critical)
 
-在执行任何 API 调用前，必须先检查环境变量 `AMINER_API_KEY` 是否存在（请求头必须同时包含：`Authorization: <your_token>` 与 `X-Platform: openclaw`）。
-检查时仅判断“存在/不存在”，禁止输出、回显或记录 token 明文（包括日志、终端输出、示例结果）。
+The following four rules are the **highest priority** and must be followed in any query task:
 
-**标准检查写法（推荐直接使用）：**
+1. **Token Security**: Only check whether `AMINER_API_KEY` exists; never expose the token in plain text in any location (including terminal output, logs, example results, or debug information).
+2. **Cost Control**: Always prefer the optimal combined query; never perform indiscriminate full-detail retrieval. When many results are matched and the user has not specified a count, default to fetching details for only the top 10 results.
+3. **Free-First**: Prefer free APIs unless the user explicitly requires deeper fields or higher precision; only upgrade to paid APIs when free ones cannot meet the need.
+4. **Result Links**: Whenever this skill is used and the result contains entities (papers/scholars/patents/journals), an accessible URL must be appended after each entity, regardless of the scenario or output format.
+
+Entity URL templates (mandatory):
+- Paper: `https://www.aminer.cn/pub/{paper_id}`
+- Scholar: `https://www.aminer.cn/profile/{scholar_id}`
+- Patent: `https://www.aminer.cn/patent/{patent_id}`
+- Journal: `https://www.aminer.cn/open/journal/detail/{journal_id}`
+
+> Enforcement note: This rule applies to all returned results (including summaries, lists, details, comparative analyses, workflow outputs, and raw output transcriptions). Whenever an entity appears and a usable ID is available, a link must be attached.
+
+> Violating any of the above rules is considered a process non-compliance; execution must be immediately halted and corrected before continuing.
+
+---
+
+## Step 1: Check Environment Variable Token (Required)
+
+Before making any API call, you must first check whether the environment variable `AMINER_API_KEY` exists (request headers must include both: `Authorization: <your_token>` and `X-Platform: openclaw`).
+Only determine whether it "exists / does not exist"; never output, echo, or log the token in plain text (including logs, terminal output, or example results).
+
+**Standard check (recommended for direct use):**
 ```bash
 if [ -z "${AMINER_API_KEY+x}" ]; then
-    echo "AMINER_API_KEY 不存在"
+    echo "AMINER_API_KEY does not exist"
 else
-    echo "AMINER_API_KEY 存在"
+    echo "AMINER_API_KEY exists"
 fi
 ```
 
-- **若环境变量中已有 token**：继续执行后续查询流程。
-- **若环境变量中无 token**：再检查用户是否显式提供了 `--token`。
-- **若环境变量与 `--token` 都没有**：立即停止，不要继续调用任何 API，也不要进入后续工作流；先引导用户获取 token。
+- **If the token already exists in the environment variable**: proceed with the subsequent query workflow.
+- **If no token is in the environment variable**: check whether the user has explicitly provided `--token`.
+- **If neither the environment variable nor `--token` is available**: stop immediately; do not call any API or enter any subsequent workflow; guide the user to obtain a token first.
 
-**token 建议配置方式（推荐）：**
-1. 前往 [AMiner 控制台](https://open.aminer.cn/open/board?tab=control) 登录并生成 API Token
-2. 将 token 写入环境变量：`export AMINER_API_KEY="<TOKEN>"`
-3. 脚本默认优先读取环境变量 `AMINER_API_KEY`（若显式传入 `--token`，则以 `--token` 为准）
+**Recommended token configuration (preferred):**
+1. Go to the [AMiner Console](https://open.aminer.cn/open/board?tab=control), log in, and generate an API Token.
+2. Set the token as an environment variable: `export AMINER_API_KEY="<TOKEN>"`
+3. The script reads the environment variable `AMINER_API_KEY` by default (if `--token` is explicitly provided, it takes precedence).
 
-**无 token 时的引导话术要求：**
-1. 明确告知“当前缺少 token，无法继续调用 AMiner API”
-2. 引导前往 [AMiner 控制台](https://open.aminer.cn/open/board?tab=control) 登录并生成 API Token
-3. 如需帮助，可参考 [开放平台文档](https://open.aminer.cn/open/docs)
-4. 提示用户拿到 token 后再继续，并可直接回复：`这是我的 token: <TOKEN>`
+**Guidance when no token is available:**
+1. Clearly inform the user: "A token is currently missing; AMiner API calls cannot continue."
+2. Direct the user to the [AMiner Console](https://open.aminer.cn/open/board?tab=control) to log in and generate an API Token.
+3. For assistance, refer to the [Open Platform Documentation](https://open.aminer.cn/open/docs).
+4. Prompt the user to continue after obtaining a token; they can reply directly: `Here is my token: <TOKEN>`
 
-> token 可在控制台生成并在有效期内复用。未拿到 token 前，不执行任何数据查询步骤。
+> The token can be generated in the console and reused within its validity period. Do not execute any data query steps before obtaining a token.
 
 ---
 
-## 快速使用（Python 脚本）
+## Quick Start (Python Script)
 
-所有工作流均可通过 `scripts/aminer_client.py` 驱动：
+All workflows can be driven through `scripts/aminer_client.py`:
 
 ```bash
-# 推荐：先设置环境变量（后续命令可不再重复传 --token）
+# Recommended: set the environment variable first (no need to pass --token repeatedly)
 export AMINER_API_KEY="<TOKEN>"
 
-# 学者全景分析
+# Scholar profile analysis
 python scripts/aminer_client.py --action scholar_profile --name "Andrew Ng"
 
-# 论文深度挖掘（含引用链）
+# Paper deep dive (with citation chain)
 python scripts/aminer_client.py --action paper_deep_dive --title "Attention is all you need"
 
-# 机构研究力分析
-python scripts/aminer_client.py --action org_analysis --org "清华大学"
+# Institution research capability analysis
+python scripts/aminer_client.py --action org_analysis --org "Tsinghua University"
 
-# 期刊论文监控（指定年份）
+# Journal paper monitoring (specify year)
 python scripts/aminer_client.py --action venue_papers --venue "Nature" --year 2024
 
-# 学术智能问答（自然语言提问）
-python scripts/aminer_client.py --action paper_qa --query "transformer架构最新进展"
+# Academic Q&A (natural language query)
+python scripts/aminer_client.py --action paper_qa --query "latest advances in transformer architecture"
 
-# 专利搜索与详情
-python scripts/aminer_client.py --action patent_search --query "量子计算"
+# Patent search and details
+python scripts/aminer_client.py --action patent_search --query "quantum computing"
 ```
 
-也可以直接调用单个 API：
+You can also call a single API directly:
 ```bash
 python scripts/aminer_client.py --action raw \
   --api paper_search --params '{"title": "BERT", "page": 0, "size": 5}'
 
-# 或临时覆盖环境变量，显式传 --token
+# Or temporarily override the environment variable by explicitly passing --token
 python scripts/aminer_client.py --token <TOKEN> --action raw \
   --api paper_search --params '{"title": "BERT", "page": 0, "size": 5}'
 ```
 
-**raw 模式防错规则（强制）：**
-1. 调用前必须先核对函数签名（参数名与类型必须完全匹配），禁止“按语义猜参数”。
-2. raw 参数约束以 `references/api-catalog.md` 为最终准则；若与经验判断冲突，一律以 catalog 为准。
-3. `paper_info` 只用于批量基础信息，参数必须为 `{"ids": [...]}`。
-4. `paper_detail` 只支持单篇详情，参数必须为 `{"paper_id": "..."}`，**严禁**传 `ids`。
-5. 若需要多篇详情：先用低成本接口筛选（如 `paper_info` / `paper_search_pro`），再仅对目标子集调用 `paper_detail`（用户未指定数量时默认前 10 条）。
-6. 执行前先输出“即将调用的函数名 + 参数 JSON”进行自检，再发起请求。
+**Raw mode error-prevention rules (mandatory):**
+1. Before calling, verify the function signature (parameter names and types must match exactly); never "guess parameters by semantics".
+2. Raw parameter constraints are governed by `references/api-catalog.md`; if it conflicts with prior knowledge, the catalog always takes precedence.
+3. `paper_info` is only for batch basic information; the parameter must be `{"ids": [...]}`.
+4. `paper_detail` only supports single-paper details; the parameter must be `{"paper_id": "..."}`. **Never** pass `ids`.
+5. When multiple paper details are needed: first use low-cost interfaces for filtering (e.g., `paper_info` / `paper_search_pro`), then call `paper_detail` only for the target subset (default top 10 if the user has not specified a count).
+6. Before executing, output "the function name to be called + parameter JSON" for self-inspection, then make the request.
 
 ---
 
-## 稳定性与失败处理策略（必读）
+## Stability and Failure Handling Strategy (Must Read)
 
-客户端 `scripts/aminer_client.py` 内置了请求重试与降级策略，用于减少网络抖动和短暂服务异常对结果的影响。
+The client `scripts/aminer_client.py` has built-in request retry and fallback strategies to reduce the impact of network fluctuations and transient service errors on results.
 
-- **超时与重试**
-  - 默认请求超时：`30s`
-  - 最大重试次数：`3`
-  - 退避策略：指数退避（`1s -> 2s -> 4s`）+ 随机抖动
-- **可重试状态码**
+- **Timeout and Retry**
+  - Default request timeout: `30s`
+  - Maximum retries: `3`
+  - Backoff strategy: exponential backoff (`1s -> 2s -> 4s`) + random jitter
+- **Retryable Status Codes**
   - `408 / 429 / 500 / 502 / 503 / 504`
-- **不可重试场景**
-  - 常见 `4xx`（如参数错误、鉴权问题）默认不重试，直接返回错误结构
-- **工作流降级**
-  - `paper_deep_dive`：`paper_search` 无结果时自动降级到 `paper_search_pro`
-  - `paper_qa`：`query` 模式无结果时，自动降级到 `paper_search_pro`
-- **可追踪调用链**
-  - 组合工作流输出中包含 `source_api_chain`，用于标记结果由哪些 API 组合得到
+- **Non-Retryable Scenarios**
+  - Common `4xx` errors (e.g., parameter errors, authentication issues) are not retried by default; an error structure is returned directly.
+- **Workflow Fallback**
+  - `paper_deep_dive`: automatically falls back to `paper_search_pro` if `paper_search` yields no results.
+  - `paper_qa`: automatically falls back to `paper_search_pro` if the `query` mode yields no results.
+- **Traceable Call Chain**
+  - Combined workflow output includes `source_api_chain`, marking which APIs were combined to produce the result.
 
 ---
 
-## 论文搜索接口选型指南
+## Paper Search API Selection Guide
 
-当用户说“查论文”时，先判断目标是“找 ID”、“做筛选”、“做问答”还是“做分析报表”，再选 API：
+When the user says "search for papers", first determine whether the goal is "find an ID", "filter results", "Q&A", or "generate an analysis report", then select the API:
 
-| API | 侧重点 | 适用场景 | 成本 |
+| API | Focus | Use Case | Cost |
 |---|---|---|---|
-| `paper_search` | 标题检索、快速拿 `paper_id` | 已知论文标题，先定位目标论文 | 免费 |
-| `paper_search_pro` | 多条件检索与排序（作者/机构/期刊/关键词） | 主题检索、按引用量或年份排序 | ¥0.01/次 |
-| `paper_qa_search` | 自然语言问答/主题词检索 | 用户用自然语言描述需求，先走语义检索 | ¥0.05/次 |
-| `paper_list_by_search_venue` | 返回更完整论文信息（适合分析） | 需要更丰富字段做分析/报告 | ¥0.30/次 |
-| `paper_list_by_keywords` | 多关键词批量检索 | 批量专题拉取（如 AlphaFold + protein folding） | ¥0.10/次 |
-| `paper_detail_by_condition` | 年份+期刊维度拉详情 | 期刊年度监控、选刊分析 | ¥0.20/次 |
+| `paper_search` | Title search, quickly get `paper_id` | Known paper title, locate the target paper first | Free |
+| `paper_search_pro` | Multi-condition search and sorting (author/institution/journal/keywords) | Topic search, sort by citations or year | ¥0.01/call |
+| `paper_qa_search` | Natural language Q&A / topic keyword search | User describes need in natural language; semantic search first | ¥0.05/call |
+| `paper_list_by_search_venue` | Returns more complete paper info (suitable for analysis) | Need richer fields for analysis/reports | ¥0.30/call |
+| `paper_list_by_keywords` | Multi-keyword batch retrieval | Batch thematic retrieval (e.g., AlphaFold + protein folding) | ¥0.10/call |
+| `paper_detail_by_condition` | Retrieve details by year + journal dimension | Journal annual monitoring, venue selection analysis | ¥0.20/call |
 
-推荐路由（默认）：
+Recommended routing (default):
 
-1. **已知标题**：`paper_search -> paper_detail -> paper_relation`
-2. **条件筛选**：`paper_search_pro -> paper_detail`
-3. **自然语言问答**：`paper_qa_search`（若无结果降级 `paper_search_pro`）
-4. **期刊年度分析**：`venue_search -> venue_paper_relation -> paper_detail_by_condition`
+1. **Known title**: `paper_search -> paper_detail -> paper_relation`
+2. **Conditional filtering**: `paper_search_pro -> paper_detail`
+3. **Natural language Q&A**: `paper_qa_search` (fall back to `paper_search_pro` if no results)
+4. **Journal annual analysis**: `venue_search -> venue_paper_relation -> paper_detail_by_condition`
 
-补充规则（强烈建议）：
+Supplementary rules (strongly recommended):
 
-1. **单独按标题搜索**时，固定优先使用 `paper_search`（免费），用于快速定位论文 ID。
-2. **复杂语义检索**（自然语言、多条件、模糊表达）时，优先使用 `paper_qa_search`。
-3. 使用 `paper_qa_search` 时，先将自然语言需求拆分为结构化条件，再填写字段（如年份、主题词、作者/机构等）。
-4. `query` 与 `topic_high/topic_middle/topic_low` **互斥**：二选一，不要同时传。
-5. 当使用 `query` 模式时，直接填写自然语言字符串；当使用 `topic_*` 模式时，需要先做同义词/英文扩展后再填写。
-6. 示例：查询“2012 年人工智能相关论文”
-   - `year` 填 ` [2012] `
-   - 可选方案 A：`query` 填 `"人工智能"`
-   - 可选方案 B：`topic_high` 填 `[["人工智能","ai","Artificial Intelligence"]]`（并开启 `use_topic`）
-
----
-
-## 工作流外需求处理（必须）
-
-当用户提出的需求**不在上述 6 大工作流内**，或现有工作流无法直接覆盖时，必须执行以下步骤：
-
-1. 先阅读 `references/api-catalog.md`，确认可用接口、参数约束与返回字段。
-2. 根据用户目标选择最合适的 API，并设计最短可行调用链（先定位 ID，再补详情，再做关系扩展）。
-3. 必要时组合多个 API 完成查询，并在结果中标注 `source_api_chain`，清楚说明数据来源路径。
-4. 若存在多种组合方案，优先选择成本更低、稳定性更高、字段满足需求的方案。
-5. 尽可能使用“最优查询组合”，避免无差别全量拉取；先做低成本检索与筛选，再对少量目标做详情补全。
-6. 当结果量很大且用户未指定数量时，默认仅查询前 10 条详情并先返回摘要结果；例如命中 1000 篇论文时，不应对 1000 条全部调用详情接口，以减少用户费用。
-7. 涉及 `raw` 调用时，必须先做参数级校验：例如 `paper_info` 使用 `ids`，`paper_detail` 使用 `paper_id`，不得混用。
-8. 用户未明确要求深度信息时，优先走免费链路（如 `paper_search` / `paper_info` / `venue_search`），确认不足后再补充必要的收费接口。
-9. 最终返回实体列表时，必须附带对应 URL；若缺少实体 ID，应先补齐 ID 再输出结果。
-
-> 禁止因“没有现成工作流”而直接放弃查询；应基于 `api-catalog` 主动完成 API 组合。
+1. **When searching by title only**, always use `paper_search` first (free) to quickly locate the paper ID.
+2. **For complex semantic retrieval** (natural language, multi-condition, fuzzy expressions), prefer `paper_qa_search`.
+3. When using `paper_qa_search`, first break the natural language need into structured conditions, then fill in the fields (e.g., year, topic keywords, author/institution, etc.).
+4. `query` and `topic_high/topic_middle/topic_low` are **mutually exclusive**: choose one; do not pass both simultaneously.
+5. When using `query` mode, fill in a natural language string directly; when using `topic_*` mode, first expand with synonyms/English variants before filling in.
+6. Example: querying "AI-related papers from 2012":
+   - `year` → `[2012]`
+   - Option A: `query` → `"artificial intelligence"`
+   - Option B: `topic_high` → `[["artificial intelligence","ai","Artificial Intelligence"]]` (with `use_topic` enabled)
 
 ---
 
-## 6 大组合工作流
+## Handling Out-of-Workflow Requests (Required)
 
-### 工作流 1：学者全景分析（Scholar Profile）
+When the user's request **falls outside the 6 workflows above**, or existing workflows cannot directly cover it, the following steps must be executed:
 
-**适用场景**：了解某位学者的完整学术画像，包括简介、研究方向、发表论文、专利、科研项目。
+1. First read `references/api-catalog.md` to confirm available interfaces, parameter constraints, and response fields.
+2. Select the most appropriate API based on the user's goal and design the shortest viable call chain (locate ID first, then supplement details, then expand relationships).
+3. When necessary, combine multiple APIs to complete the query, and annotate `source_api_chain` in the result to clearly describe the data source path.
+4. If multiple combination approaches exist, prefer the one with lower cost, higher stability, and fields that satisfy the requirement.
+5. Use the "optimal query combination" as much as possible; avoid indiscriminate full retrieval; perform low-cost search and filtering first, then fetch details for a small set of targets.
+6. When results are large and the user has not specified a count, default to querying only the top 10 details and returning a summary first; for example, when 1000 papers are matched, do not call the detail API for all 1000 to reduce user costs.
+7. For `raw` calls, parameter-level validation is required: e.g., `paper_info` uses `ids`, `paper_detail` uses `paper_id`; do not mix them up.
+8. When the user has not explicitly requested deep information, prefer the free path (e.g., `paper_search` / `paper_info` / `venue_search`); only supplement with necessary paid APIs after confirming they are insufficient.
+9. When returning the final entity list, the corresponding URL must be included; if entity IDs are missing, supplement them before outputting results.
 
-**调用链：**
+> Do not give up on a query simply because "no existing workflow fits"; actively complete the API combination based on `api-catalog`.
+
+---
+
+## 6 Combined Workflows
+
+### Workflow 1: Scholar Profile
+
+**Use Case**: Understand a scholar's complete academic profile, including bio, research interests, published papers, patents, and research projects.
+
+**Call Chain:**
 ```
-学者搜索（name → person_id）
+Scholar search (name → person_id)
     ↓
-并行调用：
-  ├── 学者详情（bio/教育背景/荣誉）
-  ├── 学者画像（研究方向/兴趣/工作经历）
-  ├── 学者论文（论文列表）
-  ├── 学者专利（专利列表）
-  └── 学者项目（科研项目/资助信息）
+Parallel calls:
+  ├── Scholar details (bio/education/honors)
+  ├── Scholar portrait (research interests/experience/work history)
+  ├── Scholar papers (paper list)
+  ├── Scholar patents (patent list)
+  └── Scholar projects (research projects/funding info)
 ```
 
-**命令：**
+**Command:**
 ```bash
 python scripts/aminer_client.py --token <TOKEN> --action scholar_profile --name "Yann LeCun"
 ```
 
-**输出示例字段：**
-- 基本信息：姓名、机构、职称、性别
-- 个人简介（中英文）
-- 研究兴趣与领域
-- 教育背景（结构化）
-- 工作经历（结构化）
-- 论文列表（ID + 标题）
-- 专利列表（ID + 标题）
-- 科研项目（标题/资助金额/时间）
+**Sample output fields:**
+- Basic info: name, institution, title, gender
+- Personal bio (bilingual)
+- Research interests and domains
+- Education history (structured)
+- Work experience (structured)
+- Paper list (ID + title)
+- Patent list (ID + title)
+- Research projects (title/funding amount/dates)
 
 ---
 
-### 工作流 2：论文深度挖掘（Paper Deep Dive）
+### Workflow 2: Paper Deep Dive
 
-**适用场景**：根据论文标题或关键词，获取论文完整信息及引用关系。
+**Use Case**: Retrieve complete paper information and citation relationships based on a paper title or keywords.
 
-**调用链：**
+**Call Chain:**
 ```
-论文搜索 / 论文搜索pro（title/keyword → paper_id）
+Paper search / Paper search pro (title/keyword → paper_id)
     ↓
-论文详情（摘要/作者/DOI/期刊/年份/关键词）
+Paper details (abstract/authors/DOI/journal/year/keywords)
     ↓
-论文引用（该论文引用了哪些论文 → cited_ids）
+Paper citations (which papers this paper cites → cited_ids)
     ↓
-（可选）对被引论文批量获取论文信息
+(Optional) Batch retrieve basic info for cited papers
 ```
 
-**命令：**
+**Command:**
 ```bash
-# 按标题搜索
+# Search by title
 python scripts/aminer_client.py --token <TOKEN> --action paper_deep_dive --title "BERT"
 
-# 按关键词搜索（使用 pro 接口）
+# Search by keyword (using pro API)
 python scripts/aminer_client.py --token <TOKEN> --action paper_deep_dive \
   --keyword "large language model" --author "Hinton" --order n_citation
 ```
 
 ---
 
-### 工作流 3：机构研究力分析（Org Analysis）
+### Workflow 3: Org Analysis
 
-**适用场景**：分析某机构的学者规模、论文产出、专利数量，适合竞品研究或合作评估。
+**Use Case**: Analyze an institution's scholar size, paper output, and patent count; suitable for competitive research or partnership evaluation.
 
-**调用链：**
+**Call Chain:**
 ```
-机构消歧pro（原始字符串 → org_id，处理别名/全称差异）
+Org disambiguation pro (raw string → org_id, handles alias/full-name differences)
     ↓
-并行调用：
-  ├── 机构详情（简介/类型/成立时间）
-  ├── 机构学者（学者列表）
-  ├── 机构论文（论文列表）
-  └── 机构专利（专利ID列表，支持分页，最多10000条）
+Parallel calls:
+  ├── Org details (description/type/founding date)
+  ├── Org scholars (scholar list)
+  ├── Org papers (paper list)
+  └── Org patents (patent ID list, supports pagination, up to 10,000)
 ```
 
-> 若有多个同名机构，机构搜索会返回候选列表，可结合机构消歧 pro 精确匹配。
+> If multiple institutions share the same name, org search returns a candidate list; use org disambiguation pro for precise matching.
 
-**命令：**
+**Command:**
 ```bash
 python scripts/aminer_client.py --token <TOKEN> --action org_analysis --org "MIT"
-# 指定原始字符串（含缩写/别名）
+# Specify raw string (with abbreviation/alias)
 python scripts/aminer_client.py --token <TOKEN> --action org_analysis --org "Massachusetts Institute of Technology, CSAIL"
 ```
 
 ---
 
-### 工作流 4：期刊论文监控（Venue Papers）
+### Workflow 4: Venue Papers
 
-**适用场景**：追踪某期刊特定年份的论文，用于投稿调研或研究热点分析。
+**Use Case**: Track papers published in a specific journal for a given year; useful for submission research or research trend analysis.
 
-**调用链：**
+**Call Chain:**
 ```
-期刊搜索（name → venue_id）
+Venue search (name → venue_id)
     ↓
-期刊详情（ISSN/类型/简称）
+Venue details (ISSN/type/abbreviation)
     ↓
-期刊论文（venue_id + year → paper_id 列表）
+Venue papers (venue_id + year → paper_id list)
     ↓
-（可选）论文详情批量查询
+(Optional) Batch paper detail query
 ```
 
-**命令：**
+**Command:**
 ```bash
 python scripts/aminer_client.py --token <TOKEN> --action venue_papers --venue "NeurIPS" --year 2023
 ```
 
 ---
 
-### 工作流 5：学术智能问答（Paper QA Search）
+### Workflow 5: Paper QA Search
 
-**适用场景**：用自然语言或结构化关键词智能搜索论文，支持 SCI 过滤、引用量排序、作者/机构限定。
+**Use Case**: Intelligently search for papers using natural language or structured keywords; supports SCI filtering, citation-based sorting, author/institution constraints.
 
-**核心 API**：`论文问答搜索`（¥0.05/次），支持：
-- `query`：自然语言提问，系统自动拆解为关键词
-- `topic_high/middle/low`：精细控制关键词权重（嵌套数组 OR/AND 逻辑）
-- `sci_flag`：只看 SCI 论文
-- `force_citation_sort`：按引用量排序
-- `force_year_sort`：按年份排序
-- `author_terms / org_terms`：按作者名或机构名过滤
-- `author_id / org_id`：按作者 ID 或机构 ID 过滤（推荐用于同名消歧）
-- `venue_ids`：按会议/期刊 ID 过滤
+**Core API**: `Paper QA Search` (¥0.05/call), supports:
+- `query`: natural language question; system automatically breaks it into keywords
+- `topic_high/middle/low`: fine-grained keyword weight control (nested array OR/AND logic)
+- `sci_flag`: show SCI papers only
+- `force_citation_sort`: sort by citation count
+- `force_year_sort`: sort by year
+- `author_terms / org_terms`: filter by author name or institution name
+- `author_id / org_id`: filter by author ID or institution ID (recommended for disambiguation)
+- `venue_ids`: filter by conference/journal ID list
 
-**命令：**
+**Command:**
 ```bash
-# 自然语言问答
+# Natural language Q&A
 python scripts/aminer_client.py --token <TOKEN> --action paper_qa \
-  --query "用于蛋白质结构预测的深度学习方法"
+  --query "deep learning methods for protein structure prediction"
 
-# 精细关键词搜索（必须同时含 A 和 B，加分含 C）
+# Fine-grained keyword search (must contain A and B, bonus for C)
 python scripts/aminer_client.py --token <TOKEN> --action paper_qa \
   --topic_high '[["transformer","self-attention"],["protein folding"]]' \
   --topic_middle '[["AlphaFold"]]' \
@@ -342,74 +342,74 @@ python scripts/aminer_client.py --token <TOKEN> --action paper_qa \
 
 ---
 
-### 工作流 6：专利链分析（Patent Analysis）
+### Workflow 6: Patent Analysis
 
-**适用场景**：搜索特定技术领域的专利，或获取某学者/机构的专利组合。
+**Use Case**: Search for patents in a specific technology domain, or retrieve a scholar's/institution's patent portfolio.
 
-**调用链（独立搜索）：**
+**Call Chain (standalone search):**
 ```
-专利搜索（query → patent_id）
+Patent search (query → patent_id)
     ↓
-专利详情（摘要/申请日/申请号/受让人/发明人）
+Patent details (abstract/filing date/application number/assignee/inventor)
 ```
 
-**调用链（经由学者/机构）：**
+**Call Chain (via scholar/institution):**
 ```
-学者搜索 → 学者专利（patent_id 列表）
-机构消歧 → 机构专利（patent_id 列表）
+Scholar search → Scholar patents (patent_id list)
+Org disambiguation → Org patents (patent_id list)
     ↓
-专利信息 / 专利详情
+Patent info / Patent details
 ```
 
-**命令：**
+**Command:**
 ```bash
-python scripts/aminer_client.py --token <TOKEN> --action patent_search --query "量子计算芯片"
-python scripts/aminer_client.py --token <TOKEN> --action scholar_patents --name "张首晟"
+python scripts/aminer_client.py --token <TOKEN> --action patent_search --query "quantum computing chip"
+python scripts/aminer_client.py --token <TOKEN> --action scholar_patents --name "Shou-Cheng Zhang"
 ```
 
 ---
 
-## 单独 API 速查表
+## Individual API Quick Reference
 
-> 完整参数说明请阅读 `references/api-catalog.md`
+> For complete parameter descriptions, read `references/api-catalog.md`
 
-| # | 标题 | 方法 | 价格 | 接口路径（基础域名：datacenter.aminer.cn/gateway/open_platform） |
+| # | Title | Method | Price | API Path (Base domain: datacenter.aminer.cn/gateway/open_platform) |
 |---|------|------|------|------|
-| 1 | 论文问答搜索 | POST | ¥0.05 | `/api/paper/qa/search` |
-| 2 | 学者搜索 | POST | 免费 | `/api/person/search` |
-| 3 | 论文搜索 | GET | 免费 | `/api/paper/search` |
-| 4 | 论文搜索pro | GET | ¥0.01 | `/api/paper/search/pro` |
-| 5 | 专利搜索 | POST | 免费 | `/api/patent/search` |
-| 6 | 机构搜索 | POST | 免费 | `/api/organization/search` |
-| 7 | 期刊搜索 | POST | 免费 | `/api/venue/search` |
-| 8 | 学者详情 | GET | ¥1.00 | `/api/person/detail` |
-| 9 | 学者项目 | GET | ¥3.00 | `/api/project/person/v3/open` |
-| 10 | 学者论文 | GET | ¥1.50 | `/api/person/paper/relation` |
-| 11 | 学者专利 | GET | ¥1.50 | `/api/person/patent/relation` |
-| 12 | 学者画像 | GET | ¥0.50 | `/api/person/figure` |
-| 13 | 论文信息 | POST | 免费 | `/api/paper/info` |
-| 14 | 论文详情 | GET | ¥0.01 | `/api/paper/detail` |
-| 15 | 论文引用 | GET | ¥0.10 | `/api/paper/relation` |
-| 16 | 专利信息 | GET | 免费 | `/api/patent/info` |
-| 17 | 专利详情 | GET | ¥0.01 | `/api/patent/detail` |
-| 18 | 机构详情 | POST | ¥0.01 | `/api/organization/detail` |
-| 19 | 机构专利 | GET | ¥0.10 | `/api/organization/patent/relation` |
-| 20 | 机构学者 | GET | ¥0.50 | `/api/organization/person/relation` |
-| 21 | 机构论文 | GET | ¥0.10 | `/api/organization/paper/relation` |
-| 22 | 期刊详情 | POST | ¥0.20 | `/api/venue/detail` |
-| 23 | 期刊论文 | POST | ¥0.10 | `/api/venue/paper/relation` |
-| 24 | 机构消歧 | POST | ¥0.01 | `/api/organization/na` |
-| 25 | 机构消歧pro | POST | ¥0.05 | `/api/organization/na/pro` |
-| 26 | 论文搜索接口 | GET | ¥0.30 | `/api/paper/list/by/search/venue` |
-| 27 | 论文批量查询 | GET | ¥0.10 | `/api/paper/list/citation/by/keywords` |
-| 28 | 按年份与期刊获取论文详情 | GET | ¥0.20 | `/api/paper/platform/allpubs/more/detail/by/ts/org/venue` |
+| 1 | Paper QA Search | POST | ¥0.05 | `/api/paper/qa/search` |
+| 2 | Scholar Search | POST | Free | `/api/person/search` |
+| 3 | Paper Search | GET | Free | `/api/paper/search` |
+| 4 | Paper Search Pro | GET | ¥0.01 | `/api/paper/search/pro` |
+| 5 | Patent Search | POST | Free | `/api/patent/search` |
+| 6 | Org Search | POST | Free | `/api/organization/search` |
+| 7 | Venue Search | POST | Free | `/api/venue/search` |
+| 8 | Scholar Details | GET | ¥1.00 | `/api/person/detail` |
+| 9 | Scholar Projects | GET | ¥3.00 | `/api/project/person/v3/open` |
+| 10 | Scholar Papers | GET | ¥1.50 | `/api/person/paper/relation` |
+| 11 | Scholar Patents | GET | ¥1.50 | `/api/person/patent/relation` |
+| 12 | Scholar Portrait | GET | ¥0.50 | `/api/person/figure` |
+| 13 | Paper Info | POST | Free | `/api/paper/info` |
+| 14 | Paper Details | GET | ¥0.01 | `/api/paper/detail` |
+| 15 | Paper Citations | GET | ¥0.10 | `/api/paper/relation` |
+| 16 | Patent Info | GET | Free | `/api/patent/info` |
+| 17 | Patent Details | GET | ¥0.01 | `/api/patent/detail` |
+| 18 | Org Details | POST | ¥0.01 | `/api/organization/detail` |
+| 19 | Org Patents | GET | ¥0.10 | `/api/organization/patent/relation` |
+| 20 | Org Scholars | GET | ¥0.50 | `/api/organization/person/relation` |
+| 21 | Org Papers | GET | ¥0.10 | `/api/organization/paper/relation` |
+| 22 | Venue Details | POST | ¥0.20 | `/api/venue/detail` |
+| 23 | Venue Papers | POST | ¥0.10 | `/api/venue/paper/relation` |
+| 24 | Org Disambiguation | POST | ¥0.01 | `/api/organization/na` |
+| 25 | Org Disambiguation Pro | POST | ¥0.05 | `/api/organization/na/pro` |
+| 26 | Paper Search by Venue | GET | ¥0.30 | `/api/paper/list/by/search/venue` |
+| 27 | Paper Batch Query | GET | ¥0.10 | `/api/paper/list/citation/by/keywords` |
+| 28 | Paper Details by Year and Venue | GET | ¥0.20 | `/api/paper/platform/allpubs/more/detail/by/ts/org/venue` |
 
 ---
 
-## 参考资料
+## References
 
-- 完整 API 参数文档：读取 `references/api-catalog.md`
-- Python 客户端源码：`scripts/aminer_client.py`
-- 测试用例：`evals/evals.json`
-- 官方文档：https://open.aminer.cn/open/docs
-- 控制台：https://open.aminer.cn/open/board?tab=control
+- Full API parameter documentation: read `references/api-catalog.md`
+- Python client source: `scripts/aminer_client.py`
+- Test cases: `evals/evals.json`
+- Official documentation: https://open.aminer.cn/open/docs
+- Console: https://open.aminer.cn/open/board?tab=control

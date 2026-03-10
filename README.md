@@ -1,74 +1,74 @@
 # aminer-open-skill
 
-把 AMiner 的学术数据能力，变成“开箱即用”的查询与分析 Skill。  
-你只需要提供一个研究问题（查学者 / 查论文 / 查机构 / 查期刊 / 查专利），它就会自动走对应 API 工作流并输出结构化结果。
+Turn AMiner's academic data capabilities into a ready-to-use query and analysis Skill.  
+Just provide a research question (look up a scholar / paper / institution / journal / patent), and it will automatically run the corresponding API workflow and return structured results.
 
-## 一句话了解这个 Skill
+## What This Skill Does in One Line
 
-`aminer-data-search` 适合做学术信息检索和轻量分析。底层整合了 28 个 API，并封装成 6 类常用工作流，减少手动拼接口和字段对齐的成本。
+`aminer-data-search` is designed for academic information retrieval and lightweight analysis. It integrates 28 APIs under the hood and wraps them into 6 common workflows, reducing the overhead of manually assembling API calls and aligning fields.
 
-## 能解决哪些问题
+## What Problems It Solves
 
-- 查某位学者：简介、研究方向、论文、专利、项目
-- 查某篇/某类论文：详情、引用关系、关键词扩展
-- 查某个机构：学者规模、论文产出、专利分布
-- 查某个期刊：指定年份论文与主题追踪
-- 用自然语言问学术问题：如“Transformer 最新进展”
-- 查某个技术方向专利：并串联学者/机构专利关系
+- Look up a scholar: bio, research interests, papers, patents, projects
+- Look up a paper or papers: details, citation relationships, keyword expansion
+- Look up an institution: scholar size, paper output, patent distribution
+- Look up a journal: papers from a specific year and topic tracking
+- Ask academic questions in natural language: e.g., "latest advances in Transformer"
+- Look up patents in a technology domain: and chain to scholar/institution patent relationships
 
-## 3 分钟上手
+## Get Started in 3 Minutes
 
-### 1) 准备 Token（必需）
+### 1) Prepare a Token (Required)
 
-在 AMiner 控制台生成 Token：  
+Generate a Token in the AMiner Console:  
 https://open.aminer.cn/open/board?tab=control
 
-### 2) 配置环境变量（推荐）
+### 2) Configure Environment Variable (Recommended)
 
 ```bash
 export AMINER_API_KEY="<YOUR_TOKEN>"
 ```
 
-### 3) 运行示例
+### 3) Run Examples
 
 ```bash
-# 查学者画像
+# Look up a scholar profile
 python skills/aminer-data-search/scripts/aminer_client.py \
   --action scholar_profile --name "Andrew Ng"
 
-# 按标题深挖论文（含引用链）
+# Deep-dive a paper by title (with citation chain)
 python skills/aminer-data-search/scripts/aminer_client.py \
   --action paper_deep_dive --title "Attention is all you need"
 
-# 分析机构研究力
+# Analyze institutional research capability
 python skills/aminer-data-search/scripts/aminer_client.py \
-  --action org_analysis --org "清华大学"
+  --action org_analysis --org "Tsinghua University"
 
-# 自然语言问答式搜论文
+# Search papers with natural language Q&A
 python skills/aminer-data-search/scripts/aminer_client.py \
-  --action paper_qa --query "transformer 架构最新进展"
+  --action paper_qa --query "latest advances in transformer architecture"
 ```
 
-## 常见使用方式
+## Common Usage Patterns
 
-- **按任务走工作流**：适合“给我完整结果”的需求（如 scholar_profile、paper_deep_dive）
-- **按接口精细调用**：适合“只调一个 API”的需求（`--action raw` + `--api` + `--params`）
-- **按成本控制策略**：先免费/低价接口定位目标，再调用高价详情接口
+- **Task-based workflow**: suitable for "give me complete results" needs (e.g., scholar_profile, paper_deep_dive)
+- **Fine-grained API calls**: suitable for "call just one API" needs (`--action raw` + `--api` + `--params`)
+- **Cost-control strategy**: use free/low-cost APIs to locate targets first, then call expensive detail APIs
 
-## 目录说明
+## Directory Structure
 
-- `skills/aminer-data-search/SKILL.md`：完整能力说明、工作流设计、调用约束
-- `skills/aminer-data-search/scripts/aminer_client.py`：Python 客户端与命令行入口
-- `skills/aminer-data-search/references/api-catalog.md`：28 个 API 参数与路径速查
-- `skills/aminer-data-search/evals/evals.json`：评测用例与测试样例
+- `skills/aminer-data-search/SKILL.md`: Full capability description, workflow design, and call constraints
+- `skills/aminer-data-search/scripts/aminer_client.py`: Python client and command-line entry point
+- `skills/aminer-data-search/references/api-catalog.md`: Quick reference for all 28 API parameters and paths
+- `skills/aminer-data-search/evals/evals.json`: Evaluation cases and test samples
 
-## 注意事项
+## Notes
 
-- 没有 Token 时不要继续调用 API（可用 `AMINER_API_KEY` 或 `--token`）
-- 客户端已内置超时重试与部分降级策略，能提升请求稳定性
-- 部分 API 为计费接口，建议先确认场景再放大调用规模
+- Do not continue calling APIs without a Token (use `AMINER_API_KEY` or `--token`)
+- The client has built-in timeout retry and partial fallback strategies to improve request stability
+- Some APIs are billed; confirm the scenario before scaling up calls
 
-## 参考资料
+## References
 
-- AMiner 开放平台文档：https://open.aminer.cn/open/docs
-- Skill 详细文档：`skills/aminer-data-search/SKILL.md`
+- AMiner Open Platform Documentation: https://open.aminer.cn/open/docs
+- Skill Detailed Documentation: `skills/aminer-data-search/SKILL.md`
