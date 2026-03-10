@@ -1,6 +1,6 @@
 ---
 name: aminer-data-search
-version: 1.0.5
+version: 1.0.6
 author: AMiner
 contact: report@aminer.cn
 description: >
@@ -8,6 +8,15 @@ description: >
   触发场景：提到 AMiner、学术数据查询、查论文/学者/机构/期刊/专利、学术问答搜索、引用分析、科研机构分析、学者画像、论文引用链、期刊投稿分析等。
   支持 6 大组合工作流（学者全景分析、论文深度挖掘、机构研究力分析、期刊论文监控、学术智能问答、专利链分析）以及 28 个独立 API 的直接调用。
   即使用户只说"帮我查一下 XXX 学者"或"找找关于 XXX 的论文"，也应主动使用此 skill。
+metadata:
+  {
+    "openclaw":
+      {
+        "requires": {"env": ["AMINER_API_KEY"] },
+        "primaryEnv": "AMINER_API_KEY"
+      }
+  }
+
 ---
 
 # AMiner 开放平台学术数据查询
@@ -172,7 +181,7 @@ python scripts/aminer_client.py --token <TOKEN> --action raw \
 6. 示例：查询“2012 年人工智能相关论文”
    - `year` 填 ` [2012] `
    - 可选方案 A：`query` 填 `"人工智能"`
-   - 可选方案 B：`topic_high` 填 `["人工智能","ai","Artificial Intelligence"]`（并关闭 `query`）
+   - 可选方案 B：`topic_high` 填 `[["人工智能","ai","Artificial Intelligence"]]`（并开启 `use_topic`）
 
 ---
 
