@@ -1,13 +1,13 @@
 ---
 name: aminer-data-search
-version: 1.0.7
+version: 1.0.8
 author: AMiner
 contact: report@aminer.cn
 description: >
-  Use the AMiner Open Platform API for academic data queries and analysis. Use this skill when users need to look up scholar profiles, paper details, institution data, journal content, or patent information.
-  Trigger scenarios: mentions of AMiner, academic data queries, searching for papers/scholars/institutions/journals/patents, academic Q&A search, citation analysis, research institution analysis, scholar portraits, paper citation chains, journal submission analysis, etc.
-  Supports 6 combined workflows (Scholar Profile, Paper Deep Dive, Org Analysis, Venue Papers, Paper QA Search, Patent Analysis) and direct calls to all 28 individual APIs.
-  Even if the user simply says "look up scholar XXX" or "find papers about XXX", proactively use this skill.
+  Full-featured AMiner skill with 28 APIs and 6 workflows. Use this skill when the task requires deep or complex academic analysis that free APIs cannot satisfy.
+  Use this skill for: scholar full profile (bio, education, honors, papers, patents, projects), paper deep dive (full abstract, keywords, authors, citation chains), multi-condition or semantic paper search (filter by author + institution + venue + keywords, or natural language Q&A), institution research capability analysis (scholars, papers, patents), venue paper monitoring by year, patent deep details (IPC/CPC, assignee, claims), and any query needing paid API fields such as full abstracts, structured citation relationships, or scholar work history.
+  Do NOT use this skill for simple lookups that free APIs can answer — such as checking a paper title, identifying a scholar by name, normalizing an institution or venue name, or scanning patent trends by keyword. For those, use aminer-free-search instead.
+  Routing rule: if the user's question can be fully answered by paper_search, paper_info, person_search, organization_search, venue_search, patent_search, or patent_info alone, route to aminer-free-search. Otherwise use this skill.
 metadata:
   {
     "openclaw":
@@ -53,7 +53,7 @@ Entity URL templates (mandatory):
 
 ## Step 1: Check Environment Variable Token (Required)
 
-Before making any API call, you must first check whether the environment variable `AMINER_API_KEY` exists (request headers must include both: `Authorization: <your_token>` and `X-Platform: openclaw`).
+Before making any API call, you must first check whether the environment variable `AMINER_API_KEY` exists (request headers should default to `Authorization: ${AMINER_API_KEY}` and include `X-Platform: openclaw`).
 Only determine whether it "exists / does not exist"; never output, echo, or log the token in plain text (including logs, terminal output, or example results).
 
 **Standard check (recommended for direct use):**
@@ -84,50 +84,33 @@ fi
 
 ---
 
-## Quick Start (Python Script)
+## Quick Start (curl)
 
-All workflows can be driven through `scripts/aminer_client.py`:
+Use direct `curl` calls by default. A Python client is optional, not required.
 
+Recommended common headers:
+
+- `Authorization: ${AMINER_API_KEY}` by default
+- `X-Platform: openclaw`
+- `Content-Type: application/json;charset=utf-8` for POST requests
+
+Single-endpoint example:
 ```bash
-# Recommended: set the environment variable first (no need to pass --token repeatedly)
-export AMINER_API_KEY="<TOKEN>"
-
-# Scholar profile analysis
-python scripts/aminer_client.py --action scholar_profile --name "Andrew Ng"
-
-# Paper deep dive (with citation chain)
-python scripts/aminer_client.py --action paper_deep_dive --title "Attention is all you need"
-
-# Institution research capability analysis
-python scripts/aminer_client.py --action org_analysis --org "Tsinghua University"
-
-# Journal paper monitoring (specify year)
-python scripts/aminer_client.py --action venue_papers --venue "Nature" --year 2024
-
-# Academic Q&A (natural language query)
-python scripts/aminer_client.py --action paper_qa --query "latest advances in transformer architecture"
-
-# Patent search and details
-python scripts/aminer_client.py --action patent_search --query "quantum computing"
+curl -X GET \
+  'https://datacenter.aminer.cn/gateway/open_platform/api/paper/search?page=1&size=5&title=BERT' \
+  -H "Authorization: ${AMINER_API_KEY}" \
+  -H 'X-Platform: openclaw'
 ```
 
-You can also call a single API directly:
-```bash
-python scripts/aminer_client.py --action raw \
-  --api paper_search --params '{"title": "BERT", "page": 0, "size": 5}'
+Compose multi-step workflows by following the call chains in this skill.
 
-# Or temporarily override the environment variable by explicitly passing --token
-python scripts/aminer_client.py --token <TOKEN> --action raw \
-  --api paper_search --params '{"title": "BERT", "page": 0, "size": 5}'
-```
-
-**Raw mode error-prevention rules (mandatory):**
-1. Before calling, verify the function signature (parameter names and types must match exactly); never "guess parameters by semantics".
-2. Raw parameter constraints are governed by `references/api-catalog.md`; if it conflicts with prior knowledge, the catalog always takes precedence.
-3. `paper_info` is only for batch basic information; the parameter must be `{"ids": [...]}`.
-4. `paper_detail` only supports single-paper details; the parameter must be `{"paper_id": "..."}`. **Never** pass `ids`.
-5. When multiple paper details are needed: first use low-cost interfaces for filtering (e.g., `paper_info` / `paper_search_pro`), then call `paper_detail` only for the target subset (default top 10 if the user has not specified a count).
-6. Before executing, output "the function name to be called + parameter JSON" for self-inspection, then make the request.
+**Direct-call guardrails (mandatory):**
+1. Verify the endpoint signature before calling; parameter names and types must match exactly.
+2. Parameter constraints are governed by `references/api-catalog.md`.
+3. `paper_info` is batch-only and must use `{"ids": [...]}`.
+4. `paper_detail` is single-paper only and must use one `id`.
+5. When multiple paper details are needed, filter first and detail later.
+6. Prefer the free path first, then upgrade only when deeper fields are required.
 
 ---
 
@@ -170,6 +153,16 @@ Recommended routing (default):
 2. **Conditional filtering**: `paper_search_pro -> paper_detail`
 3. **Natural language Q&A**: `paper_qa_search` (fall back to `paper_search_pro` if no results)
 4. **Journal annual analysis**: `venue_search -> venue_paper_relation -> paper_detail_by_condition`
+
+Key free-tier screening fields currently available:
+
+- `paper_search`: `venue_name`, `first_author`, `n_citation_bucket`, `year`
+- `paper_info`: `abstract_slice`, `year`, `venue_id`, `author_count`
+- `person_search`: `interests`, `n_citation`, `org/org_id`
+- `organization_search`: `aliases`
+- `venue_search`: `aliases`, `venue_type`
+- `patent_search`: `inventor_name`, `app_year`, `pub_year`
+- `patent_info`: `app_year`, `pub_year`
 
 Supplementary rules (strongly recommended):
 
@@ -221,15 +214,20 @@ Parallel calls:
   └── Scholar projects (research projects/funding info)
 ```
 
-**Command:**
+**curl Example:**
 ```bash
-python scripts/aminer_client.py --token <TOKEN> --action scholar_profile --name "Yann LeCun"
+curl -X POST \
+  'https://datacenter.aminer.cn/gateway/open_platform/api/person/search' \
+  -H 'Content-Type: application/json;charset=utf-8' \
+  -H "Authorization: ${AMINER_API_KEY}" \
+  -H 'X-Platform: openclaw' \
+  -d '{"name":"Yann LeCun","size":5}'
 ```
 
 **Sample output fields:**
 - Basic info: name, institution, title, gender
 - Personal bio (bilingual)
-- Research interests and domains
+- Research interests and domains (use free-search `interests` first for quick screening)
 - Education history (structured)
 - Work experience (structured)
 - Paper list (ID + title)
@@ -253,14 +251,12 @@ Paper citations (which papers this paper cites → cited_ids)
 (Optional) Batch retrieve basic info for cited papers
 ```
 
-**Command:**
+**curl Example:**
 ```bash
-# Search by title
-python scripts/aminer_client.py --token <TOKEN> --action paper_deep_dive --title "BERT"
-
-# Search by keyword (using pro API)
-python scripts/aminer_client.py --token <TOKEN> --action paper_deep_dive \
-  --keyword "large language model" --author "Hinton" --order n_citation
+curl -X GET \
+  'https://datacenter.aminer.cn/gateway/open_platform/api/paper/search?page=1&size=5&title=BERT' \
+  -H "Authorization: ${AMINER_API_KEY}" \
+  -H 'X-Platform: openclaw'
 ```
 
 ---
@@ -282,11 +278,14 @@ Parallel calls:
 
 > If multiple institutions share the same name, org search returns a candidate list; use org disambiguation pro for precise matching.
 
-**Command:**
+**curl Example:**
 ```bash
-python scripts/aminer_client.py --token <TOKEN> --action org_analysis --org "MIT"
-# Specify raw string (with abbreviation/alias)
-python scripts/aminer_client.py --token <TOKEN> --action org_analysis --org "Massachusetts Institute of Technology, CSAIL"
+curl -X POST \
+  'https://datacenter.aminer.cn/gateway/open_platform/api/organization/na/pro' \
+  -H 'Content-Type: application/json;charset=utf-8' \
+  -H "Authorization: ${AMINER_API_KEY}" \
+  -H 'X-Platform: openclaw' \
+  -d '{"org":"Massachusetts Institute of Technology, CSAIL"}'
 ```
 
 ---
@@ -297,7 +296,7 @@ python scripts/aminer_client.py --token <TOKEN> --action org_analysis --org "Mas
 
 **Call Chain:**
 ```
-Venue search (name → venue_id)
+Venue search (name → venue_id, free response includes `aliases` and `venue_type`)
     ↓
 Venue details (ISSN/type/abbreviation)
     ↓
@@ -306,9 +305,14 @@ Venue papers (venue_id + year → paper_id list)
 (Optional) Batch paper detail query
 ```
 
-**Command:**
+**curl Example:**
 ```bash
-python scripts/aminer_client.py --token <TOKEN> --action venue_papers --venue "NeurIPS" --year 2023
+curl -X POST \
+  'https://datacenter.aminer.cn/gateway/open_platform/api/venue/search' \
+  -H 'Content-Type: application/json;charset=utf-8' \
+  -H "Authorization: ${AMINER_API_KEY}" \
+  -H 'X-Platform: openclaw' \
+  -d '{"name":"NeurIPS"}'
 ```
 
 ---
@@ -327,17 +331,14 @@ python scripts/aminer_client.py --token <TOKEN> --action venue_papers --venue "N
 - `author_id / org_id`: filter by author ID or institution ID (recommended for disambiguation)
 - `venue_ids`: filter by conference/journal ID list
 
-**Command:**
+**curl Example:**
 ```bash
-# Natural language Q&A
-python scripts/aminer_client.py --token <TOKEN> --action paper_qa \
-  --query "deep learning methods for protein structure prediction"
-
-# Fine-grained keyword search (must contain A and B, bonus for C)
-python scripts/aminer_client.py --token <TOKEN> --action paper_qa \
-  --topic_high '[["transformer","self-attention"],["protein folding"]]' \
-  --topic_middle '[["AlphaFold"]]' \
-  --sci_flag --sort_citation
+curl -X POST \
+  'https://datacenter.aminer.cn/gateway/open_platform/api/paper/qa/search' \
+  -H 'Content-Type: application/json;charset=utf-8' \
+  -H "Authorization: ${AMINER_API_KEY}" \
+  -H 'X-Platform: openclaw' \
+  -d '{"use_topic":false,"query":"deep learning methods for protein structure prediction","size":10,"sci_flag":true}'
 ```
 
 ---
@@ -348,9 +349,9 @@ python scripts/aminer_client.py --token <TOKEN> --action paper_qa \
 
 **Call Chain (standalone search):**
 ```
-Patent search (query → patent_id)
+Patent search (query → patent_id, free response includes `inventor_name`, `app_year`, `pub_year`)
     ↓
-Patent details (abstract/filing date/application number/assignee/inventor)
+Patent info / Patent details (basic year-number card / deeper structured fields)
 ```
 
 **Call Chain (via scholar/institution):**
@@ -361,10 +362,14 @@ Org disambiguation → Org patents (patent_id list)
 Patent info / Patent details
 ```
 
-**Command:**
+**curl Example:**
 ```bash
-python scripts/aminer_client.py --token <TOKEN> --action patent_search --query "quantum computing chip"
-python scripts/aminer_client.py --token <TOKEN> --action scholar_patents --name "Shou-Cheng Zhang"
+curl -X POST \
+  'https://datacenter.aminer.cn/gateway/open_platform/api/patent/search' \
+  -H 'Content-Type: application/json;charset=utf-8' \
+  -H "Authorization: ${AMINER_API_KEY}" \
+  -H 'X-Platform: openclaw' \
+  -d '{"query":"quantum computing chip","page":0,"size":10}'
 ```
 
 ---
@@ -409,7 +414,7 @@ python scripts/aminer_client.py --token <TOKEN> --action scholar_patents --name 
 ## References
 
 - Full API parameter documentation: read `references/api-catalog.md`
-- Python client source: `scripts/aminer_client.py`
+- Optional Python client: `scripts/aminer_client.py`
 - Test cases: `evals/evals.json`
 - Official documentation: https://open.aminer.cn/open/docs
 - Console: https://open.aminer.cn/open/board?tab=control

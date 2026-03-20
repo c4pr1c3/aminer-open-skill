@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
 AMiner Open Platform API Client
-Supports 6 academic data query workflows and all 28 individual APIs.
+Optional convenience client for AMiner Open Platform.
+The skills in this repository can be used directly with curl; this script is kept
+as an optional local wrapper for users who prefer Python-based composition.
 
 Usage:
     python aminer_client.py --token <TOKEN> --action <ACTION> [options]
@@ -149,7 +151,7 @@ def _print(data: Any) -> None:
 # Paper APIs
 # ──────────────────────────────────────────────────────────────────────────────
 
-def paper_search(token: str, title: str, page: int = 0, size: int = 10) -> Any:
+def paper_search(token: str, title: str, page: int = 1, size: int = 10) -> Any:
     """Paper Search (Free): search by title; returns ID/title/DOI."""
     return _request(token, "GET", "/api/paper/search",
                     params={"title": title, "page": page, "size": size})
@@ -906,9 +908,40 @@ def main():
     elif args.action == "raw":
         if not args.api:
             parser.error("--action raw requires --api (API function name)")
-        fn = globals().get(args.api)
-        if fn is None or not callable(fn):
-            parser.error(f"API function not found: {args.api}. See source code for available functions.")
+        RAW_API_ALLOWLIST = {
+            "paper_search": paper_search,
+            "paper_search_pro": paper_search_pro,
+            "paper_qa_search": paper_qa_search,
+            "paper_info": paper_info,
+            "paper_detail": paper_detail,
+            "paper_relation": paper_relation,
+            "paper_list_by_search_venue": paper_list_by_search_venue,
+            "paper_list_by_keywords": paper_list_by_keywords,
+            "paper_detail_by_condition": paper_detail_by_condition,
+            "person_search": person_search,
+            "person_detail": person_detail,
+            "person_figure": person_figure,
+            "person_paper_relation": person_paper_relation,
+            "person_patent_relation": person_patent_relation,
+            "person_project": person_project,
+            "org_search": org_search,
+            "org_detail": org_detail,
+            "org_person_relation": org_person_relation,
+            "org_paper_relation": org_paper_relation,
+            "org_patent_relation": org_patent_relation,
+            "org_disambiguate": org_disambiguate,
+            "org_disambiguate_pro": org_disambiguate_pro,
+            "venue_search": venue_search,
+            "venue_detail": venue_detail,
+            "venue_paper_relation": venue_paper_relation,
+            "patent_search": patent_search,
+            "patent_info": patent_info,
+            "patent_detail": patent_detail,
+        }
+        fn = RAW_API_ALLOWLIST.get(args.api)
+        if fn is None:
+            allowed = ", ".join(sorted(RAW_API_ALLOWLIST.keys()))
+            parser.error(f"API function not found: {args.api}. Available APIs: {allowed}")
         kwargs = json.loads(args.params) if args.params else {}
         result = fn(token, **kwargs)
 

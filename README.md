@@ -1,11 +1,15 @@
 # aminer-open-skill
 
-Turn AMiner's academic data capabilities into a ready-to-use query and analysis Skill.  
-Just provide a research question (look up a scholar / paper / institution / journal / patent), and it will automatically run the corresponding API workflow and return structured results.
+Turn AMiner's academic data capabilities into ready-to-use query and analysis Skills.  
+This repository currently provides two skill flavors:
 
-## What This Skill Does in One Line
+- `aminer-data-search`: full version with 28 APIs and 6 analysis workflows
+- `aminer-free-search`: free-first version focused on discovery, lightweight screening, normalization, and upgrade qualification
 
-`aminer-data-search` is designed for academic information retrieval and lightweight analysis. It integrates 28 APIs under the hood and wraps them into 6 common workflows, reducing the overhead of manually assembling API calls and aligning fields.
+## What These Skills Do in One Line
+
+- `aminer-data-search`: academic retrieval plus deeper analysis workflows
+- `aminer-free-search`: free-tier paper / scholar / org / venue / patent discovery and triage
 
 ## What Problems It Solves
 
@@ -15,6 +19,7 @@ Just provide a research question (look up a scholar / paper / institution / jour
 - Look up a journal: papers from a specific year and topic tracking
 - Ask academic questions in natural language: e.g., "latest advances in Transformer"
 - Look up patents in a technology domain: and chain to scholar/institution patent relationships
+- Start with free APIs to screen papers, identify scholars, normalize institutions/venues, and decide whether deeper paid analysis is needed
 
 ## Get Started in 3 Minutes
 
@@ -23,7 +28,15 @@ Just provide a research question (look up a scholar / paper / institution / jour
 Generate a Token in the AMiner Console:  
 https://open.aminer.cn/open/board?tab=control
 
-### 2) Configure Environment Variable (Recommended)
+### 2) Pick a Call Style
+
+Use direct `curl` calls by default. A Python client is optional, not required.
+
+Recommended common headers:
+
+- `Authorization: ${AMINER_API_KEY}`
+- `X-Platform: openclaw`
+- `Content-Type: application/json;charset=utf-8` for POST requests
 
 ```bash
 export AMINER_API_KEY="<YOUR_TOKEN>"
@@ -32,21 +45,27 @@ export AMINER_API_KEY="<YOUR_TOKEN>"
 ### 3) Run Examples
 
 ```bash
-# Look up a scholar profile
-python skills/aminer-data-search/scripts/aminer_client.py \
-  --action scholar_profile --name "Andrew Ng"
+# Paper search
+curl -X GET \
+  'https://datacenter.aminer.cn/gateway/open_platform/api/paper/search?page=1&size=5&title=BERT' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
+  -H 'X-Platform: openclaw'
 
-# Deep-dive a paper by title (with citation chain)
-python skills/aminer-data-search/scripts/aminer_client.py \
-  --action paper_deep_dive --title "Attention is all you need"
-
-# Analyze institutional research capability
-python skills/aminer-data-search/scripts/aminer_client.py \
-  --action org_analysis --org "Tsinghua University"
+# Scholar search
+curl -X POST \
+  'https://datacenter.aminer.cn/gateway/open_platform/api/person/search' \
+  -H 'Content-Type: application/json;charset=utf-8' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
+  -H 'X-Platform: openclaw' \
+  -d '{"name":"Andrew Ng","size":5}'
 
 # Search papers with natural language Q&A
-python skills/aminer-data-search/scripts/aminer_client.py \
-  --action paper_qa --query "latest advances in transformer architecture"
+curl -X POST \
+  'https://datacenter.aminer.cn/gateway/open_platform/api/paper/qa/search' \
+  -H 'Content-Type: application/json;charset=utf-8' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
+  -H 'X-Platform: openclaw' \
+  -d '{"use_topic":false,"query":"latest advances in transformer architecture","size":10}'
 ```
 
 ## Common Usage Patterns
@@ -54,17 +73,22 @@ python skills/aminer-data-search/scripts/aminer_client.py \
 - **Task-based workflow**: suitable for "give me complete results" needs (e.g., scholar_profile, paper_deep_dive)
 - **Fine-grained API calls**: suitable for "call just one API" needs (`--action raw` + `--api` + `--params`)
 - **Cost-control strategy**: use free/low-cost APIs to locate targets first, then call expensive detail APIs
+- **Free-first workflow**: use `aminer-free-search` for discovery and screening before escalating to paid APIs
 
 ## Directory Structure
 
 - `skills/aminer-data-search/SKILL.md`: Full capability description, workflow design, and call constraints
-- `skills/aminer-data-search/scripts/aminer_client.py`: Python client and command-line entry point
+- `skills/aminer-free-search/SKILL.md`: Free-tier skill for discovery and triage
+- `skills/aminer-free-search/skill_zh.md`: Chinese version of the free-tier skill
+- `skills/aminer-free-search/references/api-catalog.md`: Free-tier API parameter and field reference
+- `skills/aminer-free-search/references/free-scenarios.md`: Scenario design, field rationale, and commercial boundary notes
+- `skills/aminer-data-search/scripts/aminer_client.py`: Optional Python client
 - `skills/aminer-data-search/references/api-catalog.md`: Quick reference for all 28 API parameters and paths
 - `skills/aminer-data-search/evals/evals.json`: Evaluation cases and test samples
 
 ## Notes
 
-- Do not continue calling APIs without a Token (use `AMINER_API_KEY` or `--token`)
+- Do not continue calling APIs without a Token
 - The client has built-in timeout retry and partial fallback strategies to improve request stability
 - Some APIs are billed; confirm the scenario before scaling up calls
 
@@ -72,3 +96,4 @@ python skills/aminer-data-search/scripts/aminer_client.py \
 
 - AMiner Open Platform Documentation: https://open.aminer.cn/open/docs
 - Skill Detailed Documentation: `skills/aminer-data-search/SKILL.md`
+- Free Skill Documentation: `skills/aminer-free-search/SKILL.md`

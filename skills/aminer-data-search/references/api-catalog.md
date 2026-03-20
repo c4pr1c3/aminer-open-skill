@@ -1,8 +1,8 @@
 # AMiner Open Platform API Complete Reference
 
 **Base URL**: `https://datacenter.aminer.cn/gateway/open_platform`  
-**Authentication**: All endpoints require both `Authorization: <TOKEN>` and `X-Platform: openclaw` in the request headers.  
-**Token**: Log in to the [Console](https://open.aminer.cn/open/board?tab=control) to generate one; replace `<TOKEN>` with your actual token in all curl examples below.
+**Authentication**: All endpoints should default to `Authorization: ${AMINER_API_KEY}` and include `X-Platform: openclaw` in the request headers.  
+**Token**: Log in to the [Console](https://open.aminer.cn/open/board?tab=control) to generate one, then export it as `AMINER_API_KEY`.
 
 ---
 
@@ -22,31 +22,35 @@
 
 - **URL**: `GET /api/paper/search`
 - **Price**: Free
-- **Description**: Search by paper title; returns paper ID, title, and DOI.
+- **Description**: Search by paper title; returns low-cost screening fields such as paper ID, title, DOI, venue, first author, citation bucket, and year.
 
 **Request Parameters:**
 
 | Parameter | Type | Required | Description |
 |--------|------|------|------|
-| page | number | Yes | Page number (starts at 0; maximum is 0) |
-| size | number | No | Items per page |
-| title | string | Yes | Paper title keyword |
+| page | number | Yes | Page number (current online definition says it starts at 1) |
+| size | number | No | Items per page, maximum 20 |
+| title | string | Yes | Paper title |
 
 **Response Fields:**
 
 | Field | Description |
 |--------|------|
 | id | Paper ID |
-| title | Paper title (English) |
+| title | Paper title |
 | title_zh | Paper title (Chinese) |
 | doi | DOI |
+| first_author | First author |
+| n_citation_bucket | Citation bucket: `0`, `1-10`, `11-50`, `51-200`, `200-1000`, `1000-5000`, `5000+` |
+| venue_name | Venue title |
+| year | Publication year |
 | total | Total count |
 
 **curl Example:**
 ```bash
 curl -X GET \
-  'https://datacenter.aminer.cn/gateway/open_platform/api/paper/search?page=0&size=5&title=BERT' \
-  -H 'Authorization: <TOKEN>' \
+  'https://datacenter.aminer.cn/gateway/open_platform/api/paper/search?page=1&size=10&title=Looking+at+CTR+Prediction+Again%3A+Is+Attention+All+You+Need' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw'
 ```
 
@@ -86,7 +90,7 @@ curl -X GET \
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/paper/search/pro?title=transformer&author=Vaswani&order=n_citation&page=0&size=5' \
-  -H 'Authorization: <TOKEN>' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw'
 ```
 
@@ -138,7 +142,7 @@ curl -X GET \
 curl -X POST \
   'https://datacenter.aminer.cn/gateway/open_platform/api/paper/qa/search' \
   -H 'Content-Type: application/json;charset=utf-8' \
-  -H 'Authorization: <TOKEN>' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw' \
   -d '{"use_topic": false, "query": "deep learning protein structure prediction", "size": 10, "sci_flag": true}'
 ```
@@ -148,7 +152,7 @@ curl -X POST \
 curl -X POST \
   'https://datacenter.aminer.cn/gateway/open_platform/api/paper/qa/search' \
   -H 'Content-Type: application/json;charset=utf-8' \
-  -H 'Authorization: <TOKEN>' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw' \
   -d '{
     "use_topic": true,
@@ -166,7 +170,7 @@ curl -X POST \
 
 - **URL**: `POST /api/paper/info`
 - **Price**: Free
-- **Description**: Batch-retrieve basic information (title, volume, journal, authors) by paper ID.
+- **Description**: Batch-retrieve lightweight paper cards by paper ID, including abstract slice, year, venue ID, author list, and author count.
 
 > **Mandatory Parameter Constraints (High Priority)**
 > 1. `paper_info` only supports the batch parameter `ids` (array); it does not support a single `paper_id`.
@@ -178,35 +182,36 @@ curl -X POST \
 
 | Parameter | Type | Required | Description |
 |--------|------|------|------|
-| ids | []string | Yes | Paper ID array |
+| ids | []string | Yes | Paper ID array, maximum 100 |
 
 **Response Fields:**
 
 | Field | Description |
 |--------|------|
-| _id | Paper ID |
+| id | Paper ID |
 | title | Paper title |
-| authors | Author list (includes name/name_zh) |
+| abstract_slice | Partial abstract |
+| authors | Author list (includes `name` / `name_zh`) |
+| author_count | Total author count |
 | issue | Volume number |
 | raw | Journal name |
 | venue | Journal info object |
+| venue_id | Venue ID |
+| year | Publication year |
 
 **curl Example:**
 ```bash
 curl -X POST \
   'https://datacenter.aminer.cn/gateway/open_platform/api/paper/info' \
   -H 'Content-Type: application/json;charset=utf-8' \
-  -H 'Authorization: <TOKEN>' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw' \
   -d '{"ids": ["53e9ab9bb7602d97023e53b2", "53e9a98eb7602d9703e42e5a"]}'
 ```
 
-**Correct raw call example (aminer_client.py):**
-```bash
-# Batch basic info (correct)
-python scripts/aminer_client.py --action raw \
-  --api paper_info --params '{"ids":["53e9ab9bb7602d97023e53b2","53e9a98eb7602d9703e42e5a"]}'
-```
+**Usage Note:**
+
+`paper_info` is a batch endpoint. Always pass `ids` as an array, even when querying only one paper.
 
 ---
 
@@ -246,20 +251,13 @@ python scripts/aminer_client.py --action raw \
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/paper/detail?id=53e9ab9bb7602d97023e53b2' \
-  -H 'Authorization: <TOKEN>' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw'
 ```
 
-**Correct / incorrect raw call example (aminer_client.py):**
-```bash
-# Single paper details (correct)
-python scripts/aminer_client.py --action raw \
-  --api paper_detail --params '{"paper_id":"53e9ab9bb7602d97023e53b2"}'
+**Usage Note:**
 
-# Incorrect example (do not do this: ids cannot be passed to paper_detail)
-python scripts/aminer_client.py --action raw \
-  --api paper_detail --params '{"ids":["53e9ab9bb7602d97023e53b2"]}'
-```
+`paper_detail` is a single-paper endpoint. Pass one `id`; do not pass `ids`.
 
 ---
 
@@ -288,7 +286,7 @@ python scripts/aminer_client.py --action raw \
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/paper/relation?id=53e9ab9bb7602d97023e53b2' \
-  -H 'Authorization: <TOKEN>' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw'
 ```
 
@@ -332,7 +330,7 @@ curl -X GET \
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/paper/list/by/search/venue?keyword=graph+neural+network&page=0&size=10&order=n_citation' \
-  -H 'Authorization: <TOKEN>' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw'
 ```
 
@@ -368,7 +366,7 @@ curl -X GET \
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/paper/list/citation/by/keywords?page=0&size=10&keywords=%5B%22deep+learning%22%2C%22object+detection%22%5D' \
-  -H 'Authorization: <TOKEN>' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw'
 ```
 
@@ -407,7 +405,7 @@ curl -X GET \
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/paper/platform/allpubs/more/detail/by/ts/org/venue?year=2023&venue_id=<VENUE_ID>' \
-  -H 'Authorization: <TOKEN>' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw'
 ```
 
@@ -419,7 +417,7 @@ curl -X GET \
 
 - **URL**: `POST /api/person/search`
 - **Price**: Free
-- **Description**: Search for scholars by name (or institution); returns ID, name, and institution.
+- **Description**: Search for scholar candidates by name and institution conditions; returns identity, institution, interests, and citation count.
 
 **Request Parameters:**
 
@@ -428,15 +426,15 @@ curl -X GET \
 | name | string | No | Scholar name |
 | org | string | No | Institution name |
 | org_id | []string | No | Institution entity ID array |
-| offset | number | No | Starting position (maximum 0) |
-| size | number | No | Number of results (maximum 10) |
+| offset | number | No | Starting position (fixed at 0; pagination not supported) |
+| size | number | No | Number of results, maximum 10 |
 
 **Response Fields:**
 
 | Field | Description |
 |--------|------|
 | id | Scholar ID |
-| name | Name (English) |
+| name | Name |
 | name_zh | Name (Chinese) |
 | org | Institution (English) |
 | org_zh | Institution (Chinese) |
@@ -450,7 +448,7 @@ curl -X GET \
 curl -X POST \
   'https://datacenter.aminer.cn/gateway/open_platform/api/person/search' \
   -H 'Content-Type: application/json;charset=utf-8' \
-  -H 'Authorization: <TOKEN>' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw' \
   -d '{"name": "Andrew Ng", "size": 5}'
 ```
@@ -488,7 +486,7 @@ curl -X POST \
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/person/detail?id=53f3ae78dabfae4b34b0c75d' \
-  -H 'Authorization: <TOKEN>' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw'
 ```
 
@@ -520,7 +518,7 @@ curl -X GET \
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/person/figure?id=53f3ae78dabfae4b34b0c75d' \
-  -H 'Authorization: <TOKEN>' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw'
 ```
 
@@ -550,7 +548,7 @@ curl -X GET \
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/person/paper/relation?id=53f3ae78dabfae4b34b0c75d' \
-  -H 'Authorization: <TOKEN>' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw'
 ```
 
@@ -582,7 +580,7 @@ curl -X GET \
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/person/patent/relation?id=53f3ae78dabfae4b34b0c75d' \
-  -H 'Authorization: <TOKEN>' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw'
 ```
 
@@ -618,7 +616,7 @@ curl -X GET \
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/project/person/v3/open?id=53f3ae78dabfae4b34b0c75d' \
-  -H 'Authorization: <TOKEN>' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw'
 ```
 
@@ -630,7 +628,7 @@ curl -X GET \
 
 - **URL**: `POST /api/organization/search`
 - **Price**: Free
-- **Description**: Search for institution IDs and names by name keyword.
+- **Description**: Search for institution IDs and standard names by institution keyword; includes partial aliases for normalization.
 
 **Request Parameters:**
 
@@ -642,6 +640,7 @@ curl -X GET \
 
 | Field | Description |
 |--------|------|
+| aliases | Alias list (partial, usually top 3) |
 | org_id | Institution ID |
 | org_name | Institution name |
 | total | Total count |
@@ -651,7 +650,7 @@ curl -X GET \
 curl -X POST \
   'https://datacenter.aminer.cn/gateway/open_platform/api/organization/search' \
   -H 'Content-Type: application/json;charset=utf-8' \
-  -H 'Authorization: <TOKEN>' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw' \
   -d '{"orgs": ["Tsinghua University"]}'
 ```
@@ -689,7 +688,7 @@ curl -X POST \
 curl -X POST \
   'https://datacenter.aminer.cn/gateway/open_platform/api/organization/detail' \
   -H 'Content-Type: application/json;charset=utf-8' \
-  -H 'Authorization: <TOKEN>' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw' \
   -d '{"ids": ["5f71b2091c455f439fe9a7d7"]}'
 ```
@@ -723,7 +722,7 @@ curl -X POST \
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/organization/person/relation?org_id=5f71b2091c455f439fe9a7d7&offset=0' \
-  -H 'Authorization: <TOKEN>' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw'
 ```
 
@@ -755,7 +754,7 @@ curl -X GET \
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/organization/paper/relation?org_id=5f71b2091c455f439fe9a7d7&offset=0' \
-  -H 'Authorization: <TOKEN>' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw'
 ```
 
@@ -786,7 +785,7 @@ curl -X GET \
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/organization/patent/relation?id=6233173d0a6eb145604733e2&page=1&page_size=100' \
-  -H 'Authorization: <TOKEN>' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw'
 ```
 
@@ -815,7 +814,7 @@ curl -X GET \
 curl -X POST \
   'https://datacenter.aminer.cn/gateway/open_platform/api/organization/na' \
   -H 'Content-Type: application/json;charset=utf-8' \
-  -H 'Authorization: <TOKEN>' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw' \
   -d '{"org": "MIT CSAIL"}'
 ```
@@ -849,7 +848,7 @@ curl -X POST \
 curl -X POST \
   'https://datacenter.aminer.cn/gateway/open_platform/api/organization/na/pro' \
   -H 'Content-Type: application/json;charset=utf-8' \
-  -H 'Authorization: <TOKEN>' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw' \
   -d '{"org": "Department of Computer Science, Tsinghua University"}'
 ```
@@ -862,7 +861,7 @@ curl -X POST \
 
 - **URL**: `POST /api/venue/search`
 - **Price**: Free
-- **Description**: Search for journal IDs and standard names by journal name.
+- **Description**: Search for venue IDs and standard names by venue name; includes aliases and venue type.
 
 **Request Parameters:**
 
@@ -877,6 +876,8 @@ curl -X POST \
 | id | Journal ID |
 | name_en | Journal name (English) |
 | name_zh | Journal name (Chinese) |
+| aliases | Alias list (partial, usually top 3) |
+| venue_type | Venue type: `journal` or `conference` |
 | total | Total count |
 
 **curl Example:**
@@ -884,9 +885,9 @@ curl -X POST \
 curl -X POST \
   'https://datacenter.aminer.cn/gateway/open_platform/api/venue/search' \
   -H 'Content-Type: application/json;charset=utf-8' \
-  -H 'Authorization: <TOKEN>' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw' \
-  -d '{"name": "NeurIPS"}'
+  -d '{"name": "tkde"}'
 ```
 
 ---
@@ -919,7 +920,7 @@ curl -X POST \
 curl -X POST \
   'https://datacenter.aminer.cn/gateway/open_platform/api/venue/detail' \
   -H 'Content-Type: application/json;charset=utf-8' \
-  -H 'Authorization: <TOKEN>' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw' \
   -d '{"id": "<VENUE_ID>"}'
 ```
@@ -956,7 +957,7 @@ curl -X POST \
 curl -X POST \
   'https://datacenter.aminer.cn/gateway/open_platform/api/venue/paper/relation' \
   -H 'Content-Type: application/json;charset=utf-8' \
-  -H 'Authorization: <TOKEN>' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw' \
   -d '{"id": "<VENUE_ID>", "year": 2023, "offset": 0, "limit": 20}'
 ```
@@ -969,13 +970,13 @@ curl -X POST \
 
 - **URL**: `POST /api/patent/search`
 - **Price**: Free
-- **Description**: Search for patents by patent name/keyword.
+- **Description**: Search for patents by title or keyword; returns lightweight trend fields such as first inventor, application year, and publication year.
 
 **Request Parameters:**
 
 | Parameter | Type | Required | Description |
 |--------|------|------|------|
-| query | string | Yes | Query field (patent title/keyword) |
+| query | string | Yes | Query field, such as patent title or keywords |
 | page | number | Yes | Page number |
 | size | number | Yes | Items per page |
 
@@ -986,15 +987,18 @@ curl -X POST \
 | id | Patent ID |
 | title | Patent title (English) |
 | title_zh | Patent title (Chinese) |
+| inventor_name | First inventor name |
+| app_year | Application year |
+| pub_year | Publication year |
 
 **curl Example:**
 ```bash
 curl -X POST \
   'https://datacenter.aminer.cn/gateway/open_platform/api/patent/search' \
   -H 'Content-Type: application/json;charset=utf-8' \
-  -H 'Authorization: <TOKEN>' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw' \
-  -d '{"query": "quantum computing chip", "page": 0, "size": 10}'
+  -d '{"page":0,"query":"Si02","size":20}'
 ```
 
 ---
@@ -1003,7 +1007,7 @@ curl -X POST \
 
 - **URL**: `GET /api/patent/info`
 - **Price**: Free
-- **Description**: Retrieve basic patent information (title, patent number, inventors, country) by patent ID.
+- **Description**: Retrieve a patent basic card by patent ID, including patent numbers, inventor, country, and basic year fields.
 
 **Request Parameters:**
 
@@ -1023,12 +1027,14 @@ curl -X POST \
 | inventor | Inventor |
 | country | Country |
 | sequence | Sequence |
+| app_year | Application year |
+| pub_year | Publication year |
 
 **curl Example:**
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/patent/info?id=<PATENT_ID>' \
-  -H 'Authorization: <TOKEN>' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw'
 ```
 
@@ -1071,7 +1077,7 @@ curl -X GET \
 ```bash
 curl -X GET \
   'https://datacenter.aminer.cn/gateway/open_platform/api/patent/detail?id=<PATENT_ID>' \
-  -H 'Authorization: <TOKEN>' \
+  -H 'Authorization: ${AMINER_API_KEY}' \
   -H 'X-Platform: openclaw'
 ```
 

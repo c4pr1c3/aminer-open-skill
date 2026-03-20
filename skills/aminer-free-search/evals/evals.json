@@ -1,0 +1,55 @@
+{
+  "skill_name": "aminer-free-search",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Help me quickly check whether the paper 'Attention Is All You Need' is worth a deep dive. Use only free AMiner APIs. My token is <YOUR_TOKEN>",
+      "expected_output": "Run the paper triage workflow: paper_search to locate the paper, then paper_info to enrich with abstract slice, year, venue, and author count. Output a lightweight card with a paper URL.",
+      "files": [],
+      "expectations": [
+        "Called Paper Search API (paper_search) to find the paper by title",
+        "Called Paper Info API (paper_info) with the returned paper ID",
+        "Output includes title, first_author, venue_name, year, and n_citation_bucket",
+        "Output includes abstract_slice from paper_info",
+        "Output includes a paper URL in the format https://www.aminer.cn/pub/{paper_id}",
+        "No paid API was called"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I want to identify which 'Andrew Ng' on AMiner is the Stanford professor. Use only free APIs. My token is <YOUR_TOKEN>",
+      "expected_output": "Run the scholar identification workflow: person_search with name and optional org filter. Return candidate list with interests, org, and citation count to help the user pick the right one.",
+      "files": [],
+      "expectations": [
+        "Called Scholar Search API (person_search) with name 'Andrew Ng'",
+        "Output includes multiple candidates with name, org, interests, and n_citation",
+        "Output includes scholar URLs in the format https://www.aminer.cn/profile/{scholar_id}",
+        "No paid API was called"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Normalize the institution name 'MIT CSAIL' using AMiner free APIs. My token is <YOUR_TOKEN>",
+      "expected_output": "Run the institution normalization workflow: organization_search with the raw institution string. Return the canonical org name, org_id, and aliases.",
+      "files": [],
+      "expectations": [
+        "Called Org Search API (organization_search) with orgs=['MIT CSAIL']",
+        "Output includes org_id and standardized org_name",
+        "Output includes aliases list",
+        "No paid API was called"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Help me look up recent patents about quantum computing",
+      "expected_output": "Detect that the user has not provided a token; immediately stop all subsequent API calls and guide the user to obtain a token from the AMiner Console.",
+      "files": [],
+      "expectations": [
+        "Clearly inform the user that a token is currently missing and AMiner API calls cannot continue",
+        "No API calls were made",
+        "Provide the console link https://open.aminer.cn/open/board?tab=control",
+        "Prompt the user to continue after obtaining a token"
+      ]
+    }
+  ]
+}
