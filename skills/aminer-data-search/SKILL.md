@@ -34,6 +34,8 @@ metadata:
 3. **Free-First**: Prefer free APIs unless the user explicitly requires deeper fields; only upgrade to paid APIs when free ones cannot satisfy the need.
 4. **Result Links**: Always append an accessible URL after each entity in the output.
 5. **Disambiguation**: Scholar ambiguity → filter by `org`/`org_id` or ask user to confirm. Org ambiguity → use `org_disambiguate_pro`. Paper ambiguity → cross-check `year` + `venue_name` + `first_author`.
+6. **Cost Report**: After completing all API calls, always output a cost summary to the user showing: each API called, its unit price, number of calls, and the total cost. Format example: `[Cost] ¥X.XX total, N API calls (api_a: ¥X.XX × N, api_b: Free × N)`.
+7. **High-Cost Confirmation (≥ ¥5)**: Before executing a workflow or call chain whose estimated total cost is ¥5.00 or more, **stop and ask the user for confirmation** first. Show the planned call chain, estimated cost per step, and the total. Only proceed after the user explicitly agrees. This applies to both predefined workflows (e.g., Scholar Profile ~¥6.00) and ad-hoc multi-step plans.
 
 Entity URL templates (mandatory):
 - Paper: `https://www.aminer.cn/pub/{paper_id}`
@@ -113,10 +115,10 @@ When the user's request falls outside the 5 workflows:
 
 ## 5 Combined Workflows
 
-### Workflow 1: Scholar Profile (~¥8.00)
+### Workflow 1: Scholar Profile (~¥6.00)
 
 **Use Case**: Complete academic profile — bio, research interests, papers, patents, projects.
-**Cost note**: Full execution is expensive. Confirm with user which sub-modules are needed; skip patents/projects if not requested.
+**Cost note**: Full execution exceeds the ¥5 threshold → **must ask for user confirmation before proceeding** (Rule 7). Show the planned steps and cost. Confirm which sub-modules are needed; skip patents/projects if not requested.
 
 **Call Chain:**
 ```

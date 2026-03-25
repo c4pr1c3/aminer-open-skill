@@ -4,15 +4,14 @@
     {
       "id": 1,
       "prompt": "I'd like to understand Andrew Ng's complete academic profile, including his research interests, important papers he has published, any patents, and research projects he has participated in. Please use the AMiner API to look this up for me. My token is <YOUR_TOKEN>",
-      "expected_output": "Run the scholar_profile workflow, calling in sequence: scholar search → scholar details → scholar portrait → scholar papers → scholar patents → scholar projects. Output a JSON result containing fields such as research interests, paper list, and patent list.",
+      "expected_output": "The estimated cost (~¥6.00) exceeds the ¥5 threshold. Before executing, display the planned call chain and cost breakdown, and ask the user for confirmation. After the user confirms, run the scholar_profile workflow. After completion, output a cost summary.",
       "files": [],
       "expectations": [
-        "Called the Scholar Search API (person_search) to find Andrew Ng",
-        "Called the Scholar Details API (person_detail) to retrieve the personal bio",
-        "Called the Scholar Portrait API (person_figure) to retrieve research interests and domains",
-        "Called the Scholar Papers API (person_paper_relation) to retrieve the paper list",
+        "Displayed the planned call chain with estimated cost BEFORE making paid API calls",
+        "Estimated total cost exceeds ¥5, so asked the user for confirmation before proceeding",
+        "After user confirmation, called Scholar Search, Scholar Details, Scholar Portrait, Scholar Papers, etc.",
         "Output contains the selected.name field with value Andrew Ng",
-        "Output contains the figure or detail field"
+        "Output contains a cost summary showing each API called and total cost"
       ]
     },
     {
@@ -141,13 +140,26 @@
     {
       "id": 12,
       "prompt": "I need to find patents held by Shou-Cheng Zhang. My token is <YOUR_TOKEN>",
-      "expected_output": "Run the scholar_patents workflow: search scholar by name, then retrieve patent list via person_patent_relation, then fetch patent details for top results.",
+      "expected_output": "Run the scholar_patents workflow: search scholar by name, then retrieve patent list via person_patent_relation, then fetch patent details for top results. Output a cost summary at the end.",
       "files": [],
       "expectations": [
         "Called Scholar Search API (person_search) to find the scholar",
         "Called Scholar Patents API (person_patent_relation) to retrieve patent list",
         "Called Patent Details API (patent_detail) for at least one patent",
-        "Output includes patent titles and patent URLs"
+        "Output includes patent titles and patent URLs",
+        "Output includes a cost summary at the end"
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "Help me deep-dive into the paper 'BERT: Pre-training of Deep Bidirectional Transformers' — get the full details and citation chain. My token is <YOUR_TOKEN>",
+      "expected_output": "Run the paper_deep_dive workflow (estimated ~¥0.12, below the ¥5 threshold, so no confirmation needed). After completion, output a cost summary showing each API called and total cost.",
+      "files": [],
+      "expectations": [
+        "Did NOT ask for cost confirmation (estimated cost is well below ¥5)",
+        "Called paper search, paper detail, and paper relation APIs",
+        "Output includes paper abstract, authors, and citation information",
+        "Output includes a cost summary at the end showing APIs called and total cost"
       ]
     }
   ]
