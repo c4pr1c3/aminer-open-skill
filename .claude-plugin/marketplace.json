@@ -13,19 +13,13 @@
       "name": "aminer-data-search",
       "description": "全套学术数据查询，支持论文/学者/机构/期刊/专利检索与分析（27 API + 5 工作流）",
       "source": "./skills/aminer-data-search",
-      "strict": false,
-      "skills": [
-        "."
-      ]
+      "strict": false
     },
     {
       "name": "aminer-free-search",
       "description": "免费接口学术初筛与发现（7 个免费 API，零费用入口）",
       "source": "./skills/aminer-free-search",
-      "strict": false,
-      "skills": [
-        "."
-      ]
+      "strict": false
     }
   ]
 }
