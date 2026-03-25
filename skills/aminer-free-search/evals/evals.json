@@ -50,6 +50,44 @@
         "Provide the console link https://open.aminer.cn/open/board?tab=control",
         "Prompt the user to continue after obtaining a token"
       ]
+    },
+    {
+      "id": 5,
+      "prompt": "Is 'TKDE' a conference or a journal? Help me normalize it using free AMiner APIs. My token is <YOUR_TOKEN>",
+      "expected_output": "Run the venue normalization workflow: venue_search with the name string. Return the standard bilingual name, venue_type, aliases, and venue URL.",
+      "files": [],
+      "expectations": [
+        "Called Venue Search API (venue_search) with name 'TKDE'",
+        "Output includes venue_id, standard name (English and/or Chinese), and venue_type",
+        "Output includes aliases list",
+        "Output includes a venue URL in the format https://www.aminer.cn/open/journal/detail/{venue_id}",
+        "No paid API was called"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Scan recent patent activity in the field of 'autonomous driving lidar' using free APIs only. My token is <YOUR_TOKEN>",
+      "expected_output": "Run the patent trend scan workflow: patent_search to find patents, optionally enriched by patent_info. Return patent titles, first inventor, app_year, pub_year, and patent URLs.",
+      "files": [],
+      "expectations": [
+        "Called Patent Search API (patent_search) with a query about autonomous driving lidar",
+        "Output includes patent titles, inventor_name, app_year, and pub_year",
+        "Output includes patent URLs in the format https://www.aminer.cn/patent/{patent_id}",
+        "No paid API was called"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Give me a quick free-tier overview of the topic 'graph neural network' — papers, scholars, institutions, and venues. My token is <YOUR_TOKEN>",
+      "expected_output": "Run the free entity map workflow: combine paper_search, person_search, organization_search, and venue_search to build a lightweight cross-entity summary.",
+      "files": [],
+      "expectations": [
+        "Called at least paper_search and person_search",
+        "Output covers multiple entity types (papers, scholars, and optionally institutions/venues)",
+        "Output includes AMiner URLs for returned entities",
+        "Clearly states what free-tier can answer and what would require paid upgrade",
+        "No paid API was called"
+      ]
     }
   ]
 }

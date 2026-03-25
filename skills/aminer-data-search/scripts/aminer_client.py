@@ -30,18 +30,57 @@ import os
 import sys
 import time
 import random
+import threading
 import urllib.request
 import urllib.error
 import urllib.parse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Optional
 
 BASE_URL = "https://datacenter.aminer.cn/gateway/open_platform"
 
-TEST_TOKEN = ""  # Go to https://open.aminer.cn/open/board?tab=control to generate your own token
-
 REQUEST_TIMEOUT_SECONDS = 30
 MAX_RETRIES = 3
 RETRYABLE_HTTP_STATUS = {408, 429, 500, 502, 503, 504}
+
+API_PRICE: dict[str, float] = {
+    "paper_search": 0, "paper_info": 0, "person_search": 0,
+    "org_search": 0, "venue_search": 0, "patent_search": 0, "patent_info": 0,
+    "paper_search_pro": 0.01, "paper_detail": 0.01, "patent_detail": 0.01,
+    "org_detail": 0.01, "org_disambiguate": 0.01,
+    "paper_qa_search": 0.05, "org_disambiguate_pro": 0.05,
+    "paper_relation": 0.10, "org_paper_relation": 0.10,
+    "org_patent_relation": 0.10, "venue_paper_relation": 0.10,
+    "paper_list_by_keywords": 0.10,
+    "venue_detail": 0.20, "paper_detail_by_condition": 0.20,
+    "person_figure": 0.50, "org_person_relation": 0.50,
+    "person_detail": 1.00,
+    "person_paper_relation": 1.50, "person_patent_relation": 1.50,
+    "person_project": 1.50,
+}
+
+_cost_log: list[tuple[str, float]] = []
+_cost_lock = threading.Lock()
+
+
+def _track_cost(api_name: str) -> None:
+    price = API_PRICE.get(api_name, 0)
+    with _cost_lock:
+        _cost_log.append((api_name, price))
+
+
+def get_cost_summary() -> dict:
+    with _cost_lock:
+        total = sum(p for _, p in _cost_log)
+        breakdown = {}
+        for name, price in _cost_log:
+            breakdown[name] = breakdown.get(name, 0) + price
+        return {"total": round(total, 2), "breakdown": breakdown, "calls": len(_cost_log)}
+
+
+def reset_cost() -> None:
+    with _cost_lock:
+        _cost_log.clear()
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -69,6 +108,7 @@ def _request(token: str, method: str, path: str,
     data = json.dumps(body).encode("utf-8") if body else None
     req = urllib.request.Request(url, data=data, headers=headers, method=method.upper())
 
+    last_error_result = None
     for attempt in range(1, MAX_RETRIES + 1):
         try:
             with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT_SECONDS) as resp:
@@ -82,63 +122,40 @@ def _request(token: str, method: str, path: str,
                 err = body_bytes.decode("utf-8", errors="replace")
             retryable = e.code in RETRYABLE_HTTP_STATUS
             print(f"[HTTP {e.code}] {e.reason}: {err}", file=sys.stderr)
-            if retryable and attempt < MAX_RETRIES:
-                backoff = (2 ** (attempt - 1)) + random.uniform(0, 0.3)
-                print(f"[Retry] attempt={attempt}/{MAX_RETRIES} wait={backoff:.2f}s", file=sys.stderr)
-                time.sleep(backoff)
-                continue
-            return {
-                "code": e.code,
-                "success": False,
-                "msg": str(e.reason),
-                "error": err,
-                "retryable": retryable,
+            last_error_result = {
+                "code": e.code, "success": False,
+                "msg": str(e.reason), "error": err, "retryable": retryable,
             }
+            if not retryable:
+                return last_error_result
         except urllib.error.URLError as e:
             reason = str(getattr(e, "reason", e))
             print(f"[Request failed] {reason}", file=sys.stderr)
-            if attempt < MAX_RETRIES:
-                backoff = (2 ** (attempt - 1)) + random.uniform(0, 0.3)
-                print(f"[Retry] attempt={attempt}/{MAX_RETRIES} wait={backoff:.2f}s", file=sys.stderr)
-                time.sleep(backoff)
-                continue
-            return {
-                "code": -1,
-                "success": False,
-                "msg": "network_error",
-                "error": reason,
-                "retryable": True,
+            last_error_result = {
+                "code": -1, "success": False,
+                "msg": "network_error", "error": reason, "retryable": True,
             }
         except TimeoutError as e:
             print(f"[Request timeout] {e}", file=sys.stderr)
-            if attempt < MAX_RETRIES:
-                backoff = (2 ** (attempt - 1)) + random.uniform(0, 0.3)
-                print(f"[Retry] attempt={attempt}/{MAX_RETRIES} wait={backoff:.2f}s", file=sys.stderr)
-                time.sleep(backoff)
-                continue
-            return {
-                "code": -1,
-                "success": False,
-                "msg": "timeout",
-                "error": str(e),
-                "retryable": True,
+            last_error_result = {
+                "code": -1, "success": False,
+                "msg": "timeout", "error": str(e), "retryable": True,
             }
         except Exception as e:
             print(f"[Request failed] {e}", file=sys.stderr)
             return {
-                "code": -1,
-                "success": False,
-                "msg": "unknown_error",
-                "error": str(e),
-                "retryable": False,
+                "code": -1, "success": False,
+                "msg": "unknown_error", "error": str(e), "retryable": False,
             }
 
-    return {
-        "code": -1,
-        "success": False,
-        "msg": "request_failed",
-        "error": "max retries exceeded",
-        "retryable": True,
+        if attempt < MAX_RETRIES:
+            backoff = (2 ** (attempt - 1)) + random.uniform(0, 0.3)
+            print(f"[Retry] attempt={attempt}/{MAX_RETRIES} wait={backoff:.2f}s", file=sys.stderr)
+            time.sleep(backoff)
+
+    return last_error_result or {
+        "code": -1, "success": False,
+        "msg": "request_failed", "error": "max retries exceeded", "retryable": True,
     }
 
 
@@ -153,6 +170,7 @@ def _print(data: Any) -> None:
 
 def paper_search(token: str, title: str, page: int = 1, size: int = 10) -> Any:
     """Paper Search (Free): search by title; returns ID/title/DOI."""
+    _track_cost("paper_search")
     return _request(token, "GET", "/api/paper/search",
                     params={"title": title, "page": page, "size": size})
 
@@ -162,6 +180,7 @@ def paper_search_pro(token: str, title: str = None, keyword: str = None,
                      org: str = None, venue: str = None,
                      order: str = None, page: int = 0, size: int = 10) -> Any:
     """Paper Search Pro (¥0.01/call): multi-condition search."""
+    _track_cost("paper_search_pro")
     params = {"page": page, "size": size}
     for k, v in [("title", title), ("keyword", keyword), ("abstract", abstract),
                  ("author", author), ("org", org), ("venue", venue), ("order", order)]:
@@ -180,21 +199,15 @@ def paper_qa_search(token: str, query: str = None,
                     author_id: list = None, org_id: list = None, venue_ids: list = None,
                     size: int = 10, offset: int = 0) -> Any:
     """Paper QA Search (¥0.05/call): AI-powered Q&A; supports natural language and structured keywords."""
+    _track_cost("paper_qa_search")
     body: dict = {"use_topic": use_topic, "size": size, "offset": offset}
-    if query:
-        body["query"] = query
-    if topic_high:
-        body["topic_high"] = topic_high
-    if topic_middle:
-        body["topic_middle"] = topic_middle
-    if topic_low:
-        body["topic_low"] = topic_low
-    if title:
-        body["title"] = title
-    if doi:
-        body["doi"] = doi
-    if year:
-        body["year"] = year
+    optional = {
+        "query": query, "topic_high": topic_high, "topic_middle": topic_middle,
+        "topic_low": topic_low, "title": title, "doi": doi, "year": year,
+        "author_terms": author_terms, "org_terms": org_terms,
+        "author_id": author_id, "org_id": org_id, "venue_ids": venue_ids,
+    }
+    body.update({k: v for k, v in optional.items() if v})
     if sci_flag:
         body["sci_flag"] = True
     if n_citation_flag:
@@ -203,53 +216,37 @@ def paper_qa_search(token: str, query: str = None,
         body["force_citation_sort"] = True
     if force_year_sort:
         body["force_year_sort"] = True
-    if author_terms:
-        body["author_terms"] = author_terms
-    if org_terms:
-        body["org_terms"] = org_terms
-    if author_id:
-        body["author_id"] = author_id
-    if org_id:
-        body["org_id"] = org_id
-    if venue_ids:
-        body["venue_ids"] = venue_ids
     return _request(token, "POST", "/api/paper/qa/search", body=body)
 
 
 def paper_info(token: str, ids: list) -> Any:
     """Paper Info (Free): batch-retrieve basic information by ID."""
+    _track_cost("paper_info")
     return _request(token, "POST", "/api/paper/info", body={"ids": ids})
 
 
 def paper_detail(token: str, paper_id: str) -> Any:
     """Paper Details (¥0.01/call): retrieve complete paper information."""
+    _track_cost("paper_detail")
     return _request(token, "GET", "/api/paper/detail", params={"id": paper_id})
 
 
 def paper_relation(token: str, paper_id: str) -> Any:
     """Paper Citations (¥0.10/call): retrieve papers cited by this paper."""
+    _track_cost("paper_relation")
     return _request(token, "GET", "/api/paper/relation", params={"id": paper_id})
-
-
-def paper_list_by_search_venue(token: str, keyword: str = None, venue: str = None,
-                                author: str = None, order: str = None,
-                                page: int = 0, size: int = 10) -> Any:
-    """Paper Search by Venue (¥0.30/call): retrieve complete paper info by keyword/journal/author."""
-    params = {"page": page, "size": size}
-    for k, v in [("keyword", keyword), ("venue", venue), ("author", author), ("order", order)]:
-        if v is not None:
-            params[k] = v
-    return _request(token, "GET", "/api/paper/list/by/search/venue", params=params)
 
 
 def paper_list_by_keywords(token: str, keywords: list, page: int = 0, size: int = 10) -> Any:
     """Paper Batch Query (¥0.10/call): retrieve paper abstracts and info via multiple keywords."""
+    _track_cost("paper_list_by_keywords")
     params = {"page": page, "size": size, "keywords": json.dumps(keywords, ensure_ascii=False)}
     return _request(token, "GET", "/api/paper/list/citation/by/keywords", params=params)
 
 
 def paper_detail_by_condition(token: str, year: int, venue_id: str = None) -> Any:
     """Paper Details by Year and Venue (¥0.20/call): year and venue_id must both be provided; providing only year returns null."""
+    _track_cost("paper_detail_by_condition")
     params: dict = {"year": year}
     if venue_id:
         params["venue_id"] = venue_id
@@ -265,6 +262,7 @@ def paper_detail_by_condition(token: str, year: int, venue_id: str = None) -> An
 def person_search(token: str, name: str = None, org: str = None,
                   org_id: list = None, offset: int = 0, size: int = 5) -> Any:
     """Scholar Search (Free): search for scholars by name/institution."""
+    _track_cost("person_search")
     body: dict = {"offset": offset, "size": size}
     if name:
         body["name"] = name
@@ -277,26 +275,31 @@ def person_search(token: str, name: str = None, org: str = None,
 
 def person_detail(token: str, person_id: str) -> Any:
     """Scholar Details (¥1.00/call): retrieve complete personal information."""
+    _track_cost("person_detail")
     return _request(token, "GET", "/api/person/detail", params={"id": person_id})
 
 
 def person_figure(token: str, person_id: str) -> Any:
     """Scholar Portrait (¥0.50/call): retrieve research interests, domains, and structured history."""
+    _track_cost("person_figure")
     return _request(token, "GET", "/api/person/figure", params={"id": person_id})
 
 
 def person_paper_relation(token: str, person_id: str) -> Any:
     """Scholar Papers (¥1.50/call): retrieve list of papers published by a scholar."""
+    _track_cost("person_paper_relation")
     return _request(token, "GET", "/api/person/paper/relation", params={"id": person_id})
 
 
 def person_patent_relation(token: str, person_id: str) -> Any:
     """Scholar Patents (¥1.50/call): retrieve a scholar's patent list."""
+    _track_cost("person_patent_relation")
     return _request(token, "GET", "/api/person/patent/relation", params={"id": person_id})
 
 
 def person_project(token: str, person_id: str) -> Any:
-    """Scholar Projects (¥3.00/call): retrieve research projects (funding amount/dates/source)."""
+    """Scholar Projects (¥1.50/call): retrieve research projects (funding amount/dates/source)."""
+    _track_cost("person_project")
     return _request(token, "GET", "/api/project/person/v3/open", params={"id": person_id})
 
 
@@ -306,22 +309,26 @@ def person_project(token: str, person_id: str) -> Any:
 
 def org_search(token: str, orgs: list) -> Any:
     """Org Search (Free): search for institutions by name keyword."""
+    _track_cost("org_search")
     return _request(token, "POST", "/api/organization/search", body={"orgs": orgs})
 
 
 def org_detail(token: str, ids: list) -> Any:
     """Org Details (¥0.01/call): retrieve institution details by ID."""
+    _track_cost("org_detail")
     return _request(token, "POST", "/api/organization/detail", body={"ids": ids})
 
 
 def org_person_relation(token: str, org_id: str, offset: int = 0) -> Any:
     """Org Scholars (¥0.50/call): retrieve affiliated scholars (10 per call)."""
+    _track_cost("org_person_relation")
     return _request(token, "GET", "/api/organization/person/relation",
                     params={"org_id": org_id, "offset": offset})
 
 
 def org_paper_relation(token: str, org_id: str, offset: int = 0) -> Any:
     """Org Papers (¥0.10/call): retrieve papers published by institution scholars (10 per call)."""
+    _track_cost("org_paper_relation")
     return _request(token, "GET", "/api/organization/paper/relation",
                     params={"org_id": org_id, "offset": offset})
 
@@ -329,17 +336,20 @@ def org_paper_relation(token: str, org_id: str, offset: int = 0) -> Any:
 def org_patent_relation(token: str, org_id: str,
                         page: int = 1, page_size: int = 100) -> Any:
     """Org Patents (¥0.10/call): retrieve institution patent list with pagination (max page_size 10,000)."""
+    _track_cost("org_patent_relation")
     return _request(token, "GET", "/api/organization/patent/relation",
                     params={"id": org_id, "page": page, "page_size": page_size})
 
 
 def org_disambiguate(token: str, org: str) -> Any:
     """Org Disambiguation (¥0.01/call): retrieve the normalized institution name."""
+    _track_cost("org_disambiguate")
     return _request(token, "POST", "/api/organization/na", body={"org": org})
 
 
 def org_disambiguate_pro(token: str, org: str) -> Any:
     """Org Disambiguation Pro (¥0.05/call): extract primary and secondary institution IDs."""
+    _track_cost("org_disambiguate_pro")
     return _request(token, "POST", "/api/organization/na/pro", body={"org": org})
 
 
@@ -349,17 +359,20 @@ def org_disambiguate_pro(token: str, org: str) -> Any:
 
 def venue_search(token: str, name: str) -> Any:
     """Venue Search (Free): search for journal ID and standard name by name."""
+    _track_cost("venue_search")
     return _request(token, "POST", "/api/venue/search", body={"name": name})
 
 
 def venue_detail(token: str, venue_id: str) -> Any:
     """Venue Details (¥0.20/call): retrieve ISSN, abbreviation, type, etc."""
+    _track_cost("venue_detail")
     return _request(token, "POST", "/api/venue/detail", body={"id": venue_id})
 
 
 def venue_paper_relation(token: str, venue_id: str, offset: int = 0,
                          limit: int = 20, year: Optional[int] = None) -> Any:
     """Venue Papers (¥0.10/call): retrieve journal paper list (supports year filtering)."""
+    _track_cost("venue_paper_relation")
     body: dict = {"id": venue_id, "offset": offset, "limit": limit}
     if year is not None:
         body["year"] = year
@@ -372,17 +385,20 @@ def venue_paper_relation(token: str, venue_id: str, offset: int = 0,
 
 def patent_search(token: str, query: str, page: int = 0, size: int = 10) -> Any:
     """Patent Search (Free): search patents by name/keyword."""
+    _track_cost("patent_search")
     return _request(token, "POST", "/api/patent/search",
                     body={"query": query, "page": page, "size": size})
 
 
 def patent_info(token: str, patent_id: str) -> Any:
     """Patent Info (Free): retrieve basic patent information (title/patent number/inventor)."""
+    _track_cost("patent_info")
     return _request(token, "GET", "/api/patent/info", params={"id": patent_id})
 
 
 def patent_detail(token: str, patent_id: str) -> Any:
     """Patent Details (¥0.01/call): retrieve complete patent information (abstract/filing date/IPC, etc.)."""
+    _track_cost("patent_detail")
     return _request(token, "GET", "/api/patent/detail", params={"id": patent_id})
 
 
@@ -425,31 +441,37 @@ def workflow_scholar_profile(token: str, name: str) -> dict:
         }
     }
 
-    print("[2/6] Fetching scholar details...", file=sys.stderr)
-    detail = person_detail(token, person_id)
-    if detail and detail.get("data"):
-        result["detail"] = detail["data"]
-
-    print("[3/6] Fetching scholar portrait...", file=sys.stderr)
-    figure = person_figure(token, person_id)
-    if figure and figure.get("data"):
-        result["figure"] = figure["data"]
-
-    print("[4/6] Fetching scholar papers...", file=sys.stderr)
-    papers = person_paper_relation(token, person_id)
-    if papers and papers.get("data"):
-        result["papers"] = papers["data"][:20]
-        result["papers_total"] = papers.get("total", len(papers["data"]))
-
-    print("[5/6] Fetching scholar patents...", file=sys.stderr)
-    patents = person_patent_relation(token, person_id)
-    if patents and patents.get("data"):
-        result["patents"] = patents["data"][:10]
-
-    print("[6/6] Fetching scholar projects...", file=sys.stderr)
-    projects = person_project(token, person_id)
-    if projects and projects.get("data"):
-        result["projects"] = projects["data"][:10]
+    print("[2/6] Fetching scholar details (parallel)...", file=sys.stderr)
+    tasks = {
+        "detail": lambda: person_detail(token, person_id),
+        "figure": lambda: person_figure(token, person_id),
+        "papers": lambda: person_paper_relation(token, person_id),
+        "patents": lambda: person_patent_relation(token, person_id),
+        "projects": lambda: person_project(token, person_id),
+    }
+    with ThreadPoolExecutor(max_workers=5) as pool:
+        futures = {pool.submit(fn): key for key, fn in tasks.items()}
+        for future in as_completed(futures):
+            key = futures[future]
+            try:
+                resp = future.result()
+            except Exception as e:
+                print(f"  [{key}] failed: {e}", file=sys.stderr)
+                continue
+            data = resp.get("data") if resp else None
+            if not data:
+                continue
+            if key == "detail":
+                result["detail"] = data
+            elif key == "figure":
+                result["figure"] = data
+            elif key == "papers":
+                result["papers"] = data[:20]
+                result["papers_total"] = resp.get("total", len(data))
+            elif key == "patents":
+                result["patents"] = data[:10]
+            elif key == "projects":
+                result["projects"] = data[:10]
 
     return result
 
@@ -567,28 +589,36 @@ def workflow_org_analysis(token: str, org: str) -> dict:
         "disambiguate": disamb,
     }
 
-    print("[2/5] Fetching org details...", file=sys.stderr)
-    detail = org_detail(token, [org_id])
-    if detail and detail.get("data"):
-        result["detail"] = detail["data"]
-
-    print("[3/5] Fetching org scholars (top 10)...", file=sys.stderr)
-    scholars = org_person_relation(token, org_id, offset=0)
-    if scholars and scholars.get("data"):
-        result["scholars"] = scholars["data"]
-        result["scholars_total"] = scholars.get("total", len(scholars["data"]))
-
-    print("[4/5] Fetching org papers (top 10)...", file=sys.stderr)
-    papers = org_paper_relation(token, org_id, offset=0)
-    if papers and papers.get("data"):
-        result["papers"] = papers["data"]
-        result["papers_total"] = papers.get("total", len(papers["data"]))
-
-    print("[5/5] Fetching org patents (up to 100)...", file=sys.stderr)
-    patents = org_patent_relation(token, org_id, page=1, page_size=100)
-    if patents and patents.get("data"):
-        result["patents"] = patents["data"]
-        result["patents_total"] = patents.get("total", len(patents["data"]))
+    print("[2/5] Fetching org data (parallel)...", file=sys.stderr)
+    tasks = {
+        "detail": lambda: org_detail(token, [org_id]),
+        "scholars": lambda: org_person_relation(token, org_id, offset=0),
+        "papers": lambda: org_paper_relation(token, org_id, offset=0),
+        "patents": lambda: org_patent_relation(token, org_id, page=1, page_size=100),
+    }
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        futures = {pool.submit(fn): key for key, fn in tasks.items()}
+        for future in as_completed(futures):
+            key = futures[future]
+            try:
+                resp = future.result()
+            except Exception as e:
+                print(f"  [{key}] failed: {e}", file=sys.stderr)
+                continue
+            data = resp.get("data") if resp else None
+            if not data:
+                continue
+            if key == "detail":
+                result["detail"] = data
+            elif key == "scholars":
+                result["scholars"] = data
+                result["scholars_total"] = resp.get("total", len(data))
+            elif key == "papers":
+                result["papers"] = data
+                result["papers_total"] = resp.get("total", len(data))
+            elif key == "patents":
+                result["patents"] = data
+                result["patents_total"] = resp.get("total", len(data))
 
     return result
 
@@ -695,14 +725,18 @@ def workflow_patent_search(token: str, query: str, page: int = 0, size: int = 10
         "total": len(patents),
     }
 
-    print(f"[2/2] Fetching details for top {min(3, len(patents))} patents...", file=sys.stderr)
+    top_patents = [p for p in patents[:3] if p.get("id")]
+    print(f"[2/2] Fetching details for {len(top_patents)} patents (parallel)...", file=sys.stderr)
     details = []
-    for p in patents[:3]:
-        pid = p.get("id")
-        if pid:
-            d = patent_detail(token, pid)
-            if d and d.get("data"):
-                details.append(d["data"])
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        futs = {pool.submit(patent_detail, token, p["id"]): p["id"] for p in top_patents}
+        for fut in as_completed(futs):
+            try:
+                d = fut.result()
+                if d and d.get("data"):
+                    details.append(d["data"])
+            except Exception as e:
+                print(f"  [patent_detail] failed: {e}", file=sys.stderr)
     result["details"] = details
     return result
 
@@ -728,14 +762,19 @@ def workflow_scholar_patents(token: str, name: str) -> dict:
     patent_list = patents["data"]
     result["patents_list"] = patent_list
 
-    print(f"[3/3] Fetching details for top {min(3, len(patent_list))} patents...", file=sys.stderr)
+    top_patents = [p for p in patent_list[:3] if p.get("patent_id")]
+    print(f"[3/3] Fetching details for {len(top_patents)} patents (parallel)...", file=sys.stderr)
     details = []
-    for p in patent_list[:3]:
-        pid = p.get("patent_id")
-        if pid:
-            d = patent_detail(token, pid)
-            if d and d.get("data"):
-                details.append(d["data"])
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        futs = {pool.submit(patent_detail, token, p["patent_id"]): p["patent_id"]
+                for p in top_patents}
+        for fut in as_completed(futs):
+            try:
+                d = fut.result()
+                if d and d.get("data"):
+                    details.append(d["data"])
+            except Exception as e:
+                print(f"  [patent_detail] failed: {e}", file=sys.stderr)
     result["patent_details"] = details
     return result
 
@@ -827,14 +866,53 @@ Docs: https://open.aminer.cn/open/docs
     p.add_argument("--api", help="[raw mode] API function name, e.g. paper_search")
     p.add_argument("--params", help="[raw mode] Parameter dictionary in JSON format")
 
+    # Dry run
+    p.add_argument("--dry-run", action="store_true", dest="dry_run",
+                   help="Preview the API call chain and estimated cost without sending requests")
+
     return p
+
+
+WORKFLOW_DRY_RUN_INFO = {
+    "scholar_profile": [
+        ("person_search", 0), ("person_detail", 1.00), ("person_figure", 0.50),
+        ("person_paper_relation", 1.50), ("person_patent_relation", 1.50), ("person_project", 1.50),
+    ],
+    "paper_deep_dive": [
+        ("paper_search", 0), ("paper_detail", 0.01), ("paper_relation", 0.10), ("paper_info", 0),
+    ],
+    "org_analysis": [
+        ("org_disambiguate_pro", 0.05), ("org_detail", 0.01),
+        ("org_person_relation", 0.50), ("org_paper_relation", 0.10), ("org_patent_relation", 0.10),
+    ],
+    "venue_papers": [
+        ("venue_search", 0), ("venue_detail", 0.20), ("venue_paper_relation", 0.10),
+    ],
+    "paper_qa": [("paper_qa_search", 0.05)],
+    "patent_search": [("patent_search", 0), ("patent_detail", 0.01)],
+    "scholar_patents": [
+        ("person_search", 0), ("person_patent_relation", 1.50), ("patent_detail", 0.01),
+    ],
+}
 
 
 def main():
     parser = build_parser()
     args = parser.parse_args()
-    # Token priority: command-line --token > env var AMINER_API_KEY > TEST_TOKEN
-    token = (args.token or os.getenv("AMINER_API_KEY") or TEST_TOKEN or "").strip()
+    token = (args.token or os.getenv("AMINER_API_KEY") or "").strip()
+
+    if args.dry_run:
+        info = WORKFLOW_DRY_RUN_INFO.get(args.action, [])
+        if not info:
+            print(f"[Dry Run] No preview available for action '{args.action}'.")
+        else:
+            total = sum(p for _, p in info)
+            print(f"[Dry Run] Action: {args.action}")
+            for i, (api, price) in enumerate(info, 1):
+                label = "Free" if price == 0 else f"¥{price:.2f}"
+                print(f"  {i}. {api} ({label})")
+            print(f"  Estimated total: ¥{total:.2f}")
+        return
 
     if not token or not token.strip():
         parser.error(
@@ -915,7 +993,6 @@ def main():
             "paper_info": paper_info,
             "paper_detail": paper_detail,
             "paper_relation": paper_relation,
-            "paper_list_by_search_venue": paper_list_by_search_venue,
             "paper_list_by_keywords": paper_list_by_keywords,
             "paper_detail_by_condition": paper_detail_by_condition,
             "person_search": person_search,
@@ -950,6 +1027,13 @@ def main():
         sys.exit(1)
 
     _print(result)
+
+    cost = get_cost_summary()
+    if cost["calls"] > 0:
+        parts = [f"{k}: ¥{v:.2f}" if v > 0 else f"{k}: Free"
+                 for k, v in sorted(cost["breakdown"].items())]
+        print(f"\n[Cost] ¥{cost['total']:.2f} total, {cost['calls']} API calls "
+              f"({', '.join(parts)})", file=sys.stderr)
 
 
 if __name__ == "__main__":

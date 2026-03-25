@@ -8,7 +8,7 @@
 
 ## Table of Contents
 
-- [Paper APIs (9)](#paper-apis)
+- [Paper APIs (8)](#paper-apis)
 - [Scholar APIs (6)](#scholar-apis)
 - [Institution APIs (7)](#institution-apis)
 - [Journal APIs (3)](#journal-apis)
@@ -292,51 +292,7 @@ curl -X GET \
 
 ---
 
-### 7. Paper Search by Venue (Comprehensive Search)
-
-- **URL**: `GET /api/paper/list/by/search/venue`
-- **Price**: ¥0.30/call
-- **Description**: Retrieve complete paper information (including abstract, institution, journal details) by keyword, author, or journal name.
-
-**Request Parameters:**
-
-| Parameter | Type | Required | Description |
-|--------|------|------|------|
-| page | number | Yes | Page number |
-| size | number | Yes | Items per page |
-| keyword | string | No | Keyword (choose one of: keyword/venue/author) |
-| venue | string | No | Journal name (choose one of: keyword/venue/author) |
-| author | string | No | Author name (choose one of: keyword/venue/author) |
-| order | string | No | Sort: `year` or `n_citation`; omit for composite ranking |
-
-**Response Fields (main):**
-
-| Field | Description |
-|--------|------|
-| _id | Paper ID |
-| title / title_zh | Paper title (bilingual) |
-| abstract / abstract_zh | Abstract (bilingual) |
-| authors | Author info (includes institution ID, aliases, details) |
-| venue | Journal info (bilingual name, aliases) |
-| venue_hhb_id | Journal ID |
-| keywords / keywords_zh | Keywords (bilingual) |
-| year | Publication year |
-| n_citation | Citation count |
-| doi | DOI |
-| url | Paper link URL |
-| total | Total count |
-
-**curl Example:**
-```bash
-curl -X GET \
-  'https://datacenter.aminer.cn/gateway/open_platform/api/paper/list/by/search/venue?keyword=graph+neural+network&page=0&size=10&order=n_citation' \
-  -H 'Authorization: ${AMINER_API_KEY}' \
-  -H 'X-Platform: openclaw'
-```
-
----
-
-### 8. Paper Batch Query (Multi-keyword)
+### 7. Paper Batch Query (Multi-keyword)
 
 - **URL**: `GET /api/paper/list/citation/by/keywords`
 - **Price**: ¥0.10/call
@@ -372,7 +328,7 @@ curl -X GET \
 
 ---
 
-### 9. Paper Details by Year and Venue
+### 8. Paper Details by Year and Venue
 
 - **URL**: `GET /api/paper/platform/allpubs/more/detail/by/ts/org/venue`
 - **Price**: ¥0.20/call
@@ -413,7 +369,7 @@ curl -X GET \
 
 ## Scholar APIs
 
-### 10. Scholar Search
+### 9. Scholar Search
 
 - **URL**: `POST /api/person/search`
 - **Price**: Free
@@ -455,7 +411,7 @@ curl -X POST \
 
 ---
 
-### 11. Scholar Details
+### 10. Scholar Details
 
 - **URL**: `GET /api/person/detail`
 - **Price**: ¥1.00/call
@@ -492,7 +448,7 @@ curl -X GET \
 
 ---
 
-### 12. Scholar Portrait
+### 11. Scholar Portrait
 
 - **URL**: `GET /api/person/figure`
 - **Price**: ¥0.50/call
@@ -524,7 +480,7 @@ curl -X GET \
 
 ---
 
-### 13. Scholar Papers
+### 12. Scholar Papers
 
 - **URL**: `GET /api/person/paper/relation`
 - **Price**: ¥1.50/call
@@ -554,7 +510,7 @@ curl -X GET \
 
 ---
 
-### 14. Scholar Patents
+### 13. Scholar Patents
 
 - **URL**: `GET /api/person/patent/relation`
 - **Price**: ¥1.50/call
@@ -586,10 +542,10 @@ curl -X GET \
 
 ---
 
-### 15. Scholar Projects
+### 14. Scholar Projects
 
 - **URL**: `GET /api/project/person/v3/open`
-- **Price**: ¥3.00/call
+- **Price**: ¥1.50/call
 - **Description**: Retrieve research projects a scholar has participated in (funding amount, dates, source).
 
 **Request Parameters:**
@@ -624,7 +580,7 @@ curl -X GET \
 
 ## Institution APIs
 
-### 16. Org Search
+### 15. Org Search
 
 - **URL**: `POST /api/organization/search`
 - **Price**: Free
@@ -657,7 +613,7 @@ curl -X POST \
 
 ---
 
-### 17. Org Details
+### 16. Org Details
 
 - **URL**: `POST /api/organization/detail`
 - **Price**: ¥0.01/call
@@ -695,7 +651,7 @@ curl -X POST \
 
 ---
 
-### 18. Org Scholars
+### 17. Org Scholars
 
 - **URL**: `GET /api/organization/person/relation`
 - **Price**: ¥0.50/call
@@ -728,7 +684,7 @@ curl -X GET \
 
 ---
 
-### 19. Org Papers
+### 18. Org Papers
 
 - **URL**: `GET /api/organization/paper/relation`
 - **Price**: ¥0.10/call
@@ -760,7 +716,7 @@ curl -X GET \
 
 ---
 
-### 20. Org Patents
+### 19. Org Patents
 
 - **URL**: `GET /api/organization/patent/relation`
 - **Price**: ¥0.10/call
@@ -791,7 +747,7 @@ curl -X GET \
 
 ---
 
-### 21. Org Disambiguation
+### 20. Org Disambiguation
 
 - **URL**: `POST /api/organization/na`
 - **Price**: ¥0.01/call
@@ -821,7 +777,7 @@ curl -X POST \
 
 ---
 
-### 22. Org Disambiguation Pro
+### 21. Org Disambiguation Pro
 
 - **URL**: `POST /api/organization/na/pro`
 - **Price**: ¥0.05/call
@@ -857,7 +813,7 @@ curl -X POST \
 
 ## Journal APIs
 
-### 23. Venue Search
+### 22. Venue Search
 
 - **URL**: `POST /api/venue/search`
 - **Price**: Free
@@ -892,7 +848,7 @@ curl -X POST \
 
 ---
 
-### 24. Venue Details
+### 23. Venue Details
 
 - **URL**: `POST /api/venue/detail`
 - **Price**: ¥0.20/call
@@ -927,7 +883,7 @@ curl -X POST \
 
 ---
 
-### 25. Venue Papers
+### 24. Venue Papers
 
 - **URL**: `POST /api/venue/paper/relation`
 - **Price**: ¥0.10/call
@@ -966,7 +922,7 @@ curl -X POST \
 
 ## Patent APIs
 
-### 26. Patent Search
+### 25. Patent Search
 
 - **URL**: `POST /api/patent/search`
 - **Price**: Free
@@ -1003,7 +959,7 @@ curl -X POST \
 
 ---
 
-### 27. Patent Info
+### 26. Patent Info
 
 - **URL**: `GET /api/patent/info`
 - **Price**: Free
@@ -1040,7 +996,7 @@ curl -X GET \
 
 ---
 
-### 28. Patent Details
+### 27. Patent Details
 
 - **URL**: `GET /api/patent/detail`
 - **Price**: ¥0.01/call
@@ -1087,8 +1043,37 @@ curl -X GET \
 
 | Category | Free APIs | Paid APIs |
 |------|---------|---------|
-| Paper | Paper Search, Paper Info | Paper Search Pro(¥0.01), Paper Details(¥0.01), Paper Citations(¥0.10), Paper QA Search(¥0.05), Paper Search by Venue(¥0.30), Paper Batch Query(¥0.10), By Condition(¥0.20) |
-| Scholar | Scholar Search | Scholar Details(¥1.00), Scholar Portrait(¥0.50), Scholar Papers(¥1.50), Scholar Patents(¥1.50), Scholar Projects(¥3.00) |
+| Paper | Paper Search, Paper Info | Paper Search Pro(¥0.01), Paper Details(¥0.01), Paper Citations(¥0.10), Paper QA Search(¥0.05), Paper Batch Query(¥0.10), By Condition(¥0.20) |
+| Scholar | Scholar Search | Scholar Details(¥1.00), Scholar Portrait(¥0.50), Scholar Papers(¥1.50), Scholar Patents(¥1.50), Scholar Projects(¥1.50) |
 | Institution | Org Search | Org Details(¥0.01), Org Scholars(¥0.50), Org Papers(¥0.10), Org Patents(¥0.10), Org Disambiguation(¥0.01), Org Disambiguation Pro(¥0.05) |
 | Journal | Venue Search | Venue Details(¥0.20), Venue Papers(¥0.10) |
 | Patent | Patent Search, Patent Info | Patent Details(¥0.01) |
+
+---
+
+## Appendix: Common Error Codes
+
+| Code | Meaning | Recommended Action |
+|------|---------|-------------------|
+| 401 | Token invalid or expired | Re-generate token at [Console](https://open.aminer.cn/open/board?tab=control) |
+| 403 | Insufficient balance or permission denied | Top up account or check token scope |
+| 404 | Entity not found | Verify the ID is correct |
+| 429 | Rate limit exceeded | Wait a few seconds and retry |
+| 500 / 502 / 503 / 504 | Server error (transient) | Retry with exponential backoff (1s → 2s → 4s) |
+
+> For `4xx` errors (except 429), do not retry — fix the request parameters first.
+
+---
+
+## Appendix: Pagination Limits
+
+| API | Constraint |
+|-----|-----------|
+| `paper_search` | `size` max 20; `page` starts at 1 |
+| `paper_search_pro` | `page` starts at 0 |
+| `person_search` | `size` max 10; `offset` fixed at 0 (no pagination) |
+| `org_person_relation` | Fixed 10 results per call; use `offset` to paginate |
+| `org_paper_relation` | Fixed 10 results per call; use `offset` to paginate |
+| `org_patent_relation` | `page_size` max 10,000; `page` starts at 1 |
+| `venue_paper_relation` | Use `offset` + `limit` to paginate |
+| `paper_info` | `ids` array max 100 items |
